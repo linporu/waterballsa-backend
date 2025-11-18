@@ -1,4 +1,4 @@
-package richardlin.io.waterballsa_backend;
+package richardlin.io.waterballsabackend;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -7,5 +7,5 @@ import org.springframework.boot.test.context.SpringBootTest;
 class WaterballsaBackendApplicationTests {
 
   @Test
-  void contextLoads() {}
+  void contextLoads() { }
 }

@@ -1,4 +1,4 @@
-package richardlin.io.waterballsa_backend.service;
+package richardlin.io.waterballsabackend.service;
 
 import java.sql.Connection;
 import java.sql.SQLException;

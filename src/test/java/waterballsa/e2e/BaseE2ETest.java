@@ -30,6 +30,7 @@ import org.testcontainers.junit.jupiter.Testcontainers;
 public abstract class BaseE2ETest {
 
   @Container
+  @SuppressWarnings("resource") // Container lifecycle managed by Testcontainers
   static PostgreSQLContainer<?> postgres =
       new PostgreSQLContainer<>("postgres:15-alpine")
           .withDatabaseName("e2e_test")

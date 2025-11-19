@@ -17,12 +17,7 @@ class HealthCheckE2ETest extends BaseE2ETest {
   @Test
   @DisplayName("Health check endpoint should return UP status")
   void shouldReturnHealthyStatus() {
-    given()
-        .when()
-        .get("/healthz")
-        .then()
-        .statusCode(200)
-        .body("status", equalTo("UP"));
+    given().when().get("/healthz").then().statusCode(200).body("status", equalTo("UP"));
   }
 
   @Test

@@ -22,7 +22,7 @@ public class SecurityConfig {
     http.csrf(csrf -> csrf.disable())
         .authorizeHttpRequests(
             auth ->
-                auth.requestMatchers("/auth/**", "/healthz", "/actuator/**")
+                auth.requestMatchers("/auth/register", "/auth/login", "/healthz", "/actuator/**")
                     .permitAll()
                     .anyRequest()
                     .authenticated());

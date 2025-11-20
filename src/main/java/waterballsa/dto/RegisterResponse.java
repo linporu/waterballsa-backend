@@ -1,3 +1,3 @@
 package waterballsa.dto;
 
-public record RegisterResponse(String message, String userId) {}
+public record RegisterResponse(String message, Long userId) {}

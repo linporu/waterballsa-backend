@@ -1,0 +1,16 @@
+databaseChangeLog:
+  - include:
+      file: db/changelog/migrations/001-create-users-table.sql
+      relativeToChangelogFile: false
+  - include:
+      file: db/changelog/migrations/002-create-access-tokens-table.sql
+      relativeToChangelogFile: false
+  - include:
+      file: db/changelog/migrations/003-create-courses-module-tables.sql
+      relativeToChangelogFile: false
+  - include:
+      file: db/changelog/migrations/004-create-user-unit-progress-table.sql
+      relativeToChangelogFile: false
+  - include:
+      file: db/changelog/migrations/005-create-user-unit-submissions-table.sql
+      relativeToChangelogFile: false

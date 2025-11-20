@@ -1,5 +1,6 @@
 package waterballsa.service;
 
+import java.time.LocalDateTime;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -7,12 +8,16 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import waterballsa.dto.LoginRequest;
 import waterballsa.dto.LoginResponse;
+import waterballsa.dto.LogoutResponse;
 import waterballsa.dto.RegisterRequest;
 import waterballsa.dto.RegisterResponse;
 import waterballsa.dto.UserInfo;
+import waterballsa.entity.AccessToken;
 import waterballsa.entity.User;
 import waterballsa.exception.DuplicateUsernameException;
 import waterballsa.exception.InvalidCredentialsException;
+import waterballsa.exception.UnauthorizedException;
+import waterballsa.repository.AccessTokenRepository;
 import waterballsa.repository.UserRepository;
 import waterballsa.util.JwtUtil;
 
@@ -22,12 +27,17 @@ public class AuthService {
   private static final Logger logger = LoggerFactory.getLogger(AuthService.class);
 
   private final UserRepository userRepository;
+  private final AccessTokenRepository accessTokenRepository;
   private final PasswordEncoder passwordEncoder;
   private final JwtUtil jwtUtil;
 
   public AuthService(
-      UserRepository userRepository, PasswordEncoder passwordEncoder, JwtUtil jwtUtil) {
+      UserRepository userRepository,
+      AccessTokenRepository accessTokenRepository,
+      PasswordEncoder passwordEncoder,
+      JwtUtil jwtUtil) {
     this.userRepository = userRepository;
+    this.accessTokenRepository = accessTokenRepository;
     this.passwordEncoder = passwordEncoder;
     this.jwtUtil = jwtUtil;
   }
@@ -83,5 +93,35 @@ public class AuthService {
     logger.info("User login successful: {}", user.getId());
 
     return new LoginResponse(accessToken, userInfo);
+  }
+
+  @Transactional
+  public LogoutResponse logout(String token) {
+    logger.debug("Attempting to logout user with token");
+
+    // Validate token
+    if (!jwtUtil.validateToken(token)) {
+      logger.warn("Logout failed: invalid token");
+      throw new UnauthorizedException();
+    }
+
+    // Extract JTI and expiration from token
+    String jti = jwtUtil.getJtiFromToken(token);
+    LocalDateTime expiresAt = jwtUtil.getExpirationFromToken(token);
+    Long userId = jwtUtil.getUserIdFromToken(token);
+
+    // Check if token is already invalidated
+    if (accessTokenRepository.existsByTokenJti(jti)) {
+      logger.warn("Logout failed: token already invalidated");
+      throw new UnauthorizedException();
+    }
+
+    // Add token to blacklist
+    AccessToken accessToken = new AccessToken(jti, userId, expiresAt);
+    accessTokenRepository.save(accessToken);
+
+    logger.info("User logout successful: userId={}", userId);
+
+    return new LogoutResponse("Logout successful");
   }
 }

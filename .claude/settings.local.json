@@ -2,7 +2,8 @@
   "permissions": {
     "allow": [
       "Bash(make lint:*)",
-      "Bash(make test-e2e:*)"
+      "Bash(make test-e2e:*)",
+      "Bash(./mvnw test:*)"
     ],
     "deny": [],
     "ask": []

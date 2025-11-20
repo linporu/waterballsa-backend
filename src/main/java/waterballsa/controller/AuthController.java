@@ -12,6 +12,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import waterballsa.dto.LoginRequest;
 import waterballsa.dto.LoginResponse;
+import waterballsa.dto.LogoutResponse;
 import waterballsa.dto.RegisterRequest;
 import waterballsa.dto.RegisterResponse;
 import waterballsa.exception.InvalidCredentialsException;
@@ -70,6 +71,20 @@ public class AuthController {
       // Rate limit remains in effect for failed attempts
       throw e;
     }
+  }
+
+  @PostMapping("/logout")
+  public ResponseEntity<LogoutResponse> logout(HttpServletRequest request) {
+    logger.debug("Logout request received");
+
+    String authHeader = request.getHeader("Authorization");
+    String token = authHeader.substring(7);
+
+    LogoutResponse response = authService.logout(token);
+
+    logger.info("User logout successful");
+
+    return ResponseEntity.ok(response);
   }
 
   /**

@@ -21,13 +21,14 @@ public class GlobalExceptionHandler {
   public ResponseEntity<ErrorResponse> handleDuplicateUsername(DuplicateUsernameException ex) {
     logger.warn("Duplicate username error: {}", ex.getMessage());
     return ResponseEntity.status(HttpStatus.CONFLICT)
-        .body(new ErrorResponse("Username already exists"));
+        .body(new ErrorResponse("使用者名稱已存在", "請選擇其他使用者名稱"));
   }
 
   @ExceptionHandler(InvalidInputException.class)
   public ResponseEntity<ErrorResponse> handleInvalidInput(InvalidInputException ex) {
     logger.warn("Invalid input error: {}", ex.getMessage());
-    return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(new ErrorResponse(ex.getMessage()));
+    return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+        .body(new ErrorResponse("註冊失敗", ex.getMessage()));
   }
 
   @ExceptionHandler(MethodArgumentNotValidException.class)
@@ -45,17 +46,16 @@ public class GlobalExceptionHandler {
     logger.warn("Validation errors: {}", errors);
 
     // Return the first validation error message for simplicity
-    String firstError =
-        errors.values().stream().findFirst().orElse("Invalid username or password format");
+    String firstError = errors.values().stream().findFirst().orElse("請檢查您的輸入");
 
     return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-        .body(new ErrorResponse("Invalid username or password format"));
+        .body(new ErrorResponse("註冊失敗", firstError));
   }
 
   @ExceptionHandler(Exception.class)
   public ResponseEntity<ErrorResponse> handleGeneralException(Exception ex) {
     logger.error("Unexpected error occurred: ", ex);
     return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-        .body(new ErrorResponse("An unexpected error occurred"));
+        .body(new ErrorResponse("註冊失敗", "請稍後再試"));
   }
 }

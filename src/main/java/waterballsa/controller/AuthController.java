@@ -16,7 +16,6 @@ import waterballsa.dto.LogoutResponse;
 import waterballsa.dto.RegisterRequest;
 import waterballsa.dto.RegisterResponse;
 import waterballsa.exception.InvalidCredentialsException;
-import waterballsa.exception.UnauthorizedException;
 import waterballsa.service.AuthService;
 import waterballsa.service.RateLimitService;
 
@@ -78,13 +77,7 @@ public class AuthController {
   public ResponseEntity<LogoutResponse> logout(HttpServletRequest request) {
     logger.debug("Logout request received");
 
-    // Extract token from Authorization header
     String authHeader = request.getHeader("Authorization");
-    if (authHeader == null || !authHeader.startsWith("Bearer ")) {
-      logger.warn("Logout failed: missing or invalid Authorization header");
-      throw new UnauthorizedException();
-    }
-
     String token = authHeader.substring(7);
 
     LogoutResponse response = authService.logout(token);

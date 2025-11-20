@@ -63,59 +63,57 @@ public abstract class BaseE2ETest {
   /**
    * Helper method to login and retrieve authentication token.
    *
-   * @param email user email
+   * @param username user username
    * @param password user password
    * @return JWT authentication token
    */
-  protected String loginAndGetToken(String email, String password) {
+  protected String loginAndGetToken(String username, String password) {
     return given()
         .contentType(ContentType.JSON)
         .body(
             String.format(
                 """
                     {
-                        "email": "%s",
+                        "username": "%s",
                         "password": "%s"
                     }
                     """,
-                email, password))
+                username, password))
         .when()
-        .post("/api/auth/login")
+        .post("/auth/login")
         .then()
         .statusCode(200)
         .extract()
         .jsonPath()
-        .getString("token");
+        .getString("accessToken");
   }
 
   /**
    * Helper method to register a new user.
    *
-   * @param email user email
+   * @param username user username
    * @param password user password
-   * @param name user display name
    * @return user ID
    */
-  protected Long registerUser(String email, String password, String name) {
+  protected Long registerUser(String username, String password) {
     return given()
         .contentType(ContentType.JSON)
         .body(
             String.format(
                 """
                     {
-                        "email": "%s",
-                        "password": "%s",
-                        "name": "%s"
+                        "username": "%s",
+                        "password": "%s"
                     }
                     """,
-                email, password, name))
+                username, password))
         .when()
-        .post("/api/auth/register")
+        .post("/auth/register")
         .then()
         .statusCode(201)
         .extract()
         .jsonPath()
-        .getLong("id");
+        .getLong("userId");
   }
 
   /**

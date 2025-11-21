@@ -2,15 +2,19 @@
 -- This script removes all test data after test execution
 
 -- Delete in order to respect foreign key constraints
-DELETE FROM course_enrollments;
-DELETE FROM order_items;
-DELETE FROM orders;
-DELETE FROM courses;
-DELETE FROM users;
+DELETE FROM user_mission_progress WHERE TRUE;
+DELETE FROM mission_contents WHERE TRUE;
+DELETE FROM missions WHERE TRUE;
+DELETE FROM chapters WHERE TRUE;
+DELETE FROM user_journey_purchases WHERE TRUE;
+DELETE FROM journeys WHERE TRUE;
+DELETE FROM access_tokens WHERE TRUE;
+DELETE FROM users WHERE TRUE;
 
--- Reset sequences
-ALTER SEQUENCE IF EXISTS users_id_seq RESTART WITH 1;
-ALTER SEQUENCE IF EXISTS courses_id_seq RESTART WITH 1;
-ALTER SEQUENCE IF EXISTS orders_id_seq RESTART WITH 1;
-ALTER SEQUENCE IF EXISTS order_items_id_seq RESTART WITH 1;
-ALTER SEQUENCE IF EXISTS course_enrollments_id_seq RESTART WITH 1;
+-- Drop custom types (must be done after deleting data from tables that use them)
+DROP TYPE IF EXISTS user_role CASCADE;
+DROP TYPE IF EXISTS mission_access_level CASCADE;
+DROP TYPE IF EXISTS mission_status CASCADE;
+DROP TYPE IF EXISTS mission_type CASCADE;
+DROP TYPE IF EXISTS content_type CASCADE;
+DROP TYPE IF EXISTS reward_type CASCADE;

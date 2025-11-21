@@ -1,10 +1,13 @@
-.PHONY: fmt lint test test-unit test-integration test-e2e migrate-up migrate-down migrate-drop migrate-status migrate-create db-backup db-restore
+.PHONY: fmt lint build test test-unit test-integration test-e2e migrate-up migrate-down migrate-drop migrate-refresh migrate-status migrate-create db-backup db-restore
 
 fmt:
 	./mvnw spotless:apply
 
 lint:
 	./mvnw checkstyle:check
+
+build:
+	./mvnw clean compile
 
 test:
 	./mvnw test
@@ -29,7 +32,12 @@ migrate-down:
 migrate-drop:
 	docker compose exec backend mvn liquibase:dropAll
 	@echo "Cleaning up remaining database types..."
-	docker compose exec db psql -U admin -d waterballsa -c "DROP TYPE IF EXISTS user_role CASCADE" || true
+	docker compose exec -T db psql -U admin -d waterballsa < src/test/resources/test-data/cleanup.sql || true
+
+migrate-refresh:
+	@echo "Refreshing database: drop all and re-run migrations..."
+	@$(MAKE) migrate-drop
+	@$(MAKE) migrate-up
 
 migrate-status:
 	docker compose exec backend mvn liquibase:status

@@ -14,3 +14,21 @@ databaseChangeLog:
   - include:
       file: db/changelog/migrations/005-create-user-unit-submissions-table.sql
       relativeToChangelogFile: false
+  - include:
+      file: db/changelog/migrations/006-rename-courses-to-journeys-and-units-to-missions.sql
+      relativeToChangelogFile: false
+  - include:
+      file: db/changelog/migrations/007-add-teacher-name-to-journeys.sql
+      relativeToChangelogFile: false
+  - include:
+      file: db/changelog/migrations/008-add-mission-enums-and-restructure-missions-table.sql
+      relativeToChangelogFile: false
+  - include:
+      file: db/changelog/migrations/009-merge-submissions-into-progress-with-status.sql
+      relativeToChangelogFile: false
+  - include:
+      file: db/changelog/migrations/010-create-rewards-table.sql
+      relativeToChangelogFile: false
+  - include:
+      file: db/changelog/migrations/011-create-mission-contents-table.sql
+      relativeToChangelogFile: false

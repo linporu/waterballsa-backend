@@ -5,7 +5,8 @@
       "Bash(make test-e2e:*)",
       "Bash(./mvnw test:*)",
       "Bash(./mvnw clean:*)",
-      "Bash(cat:*)"
+      "Bash(cat:*)",
+      "Bash(./mvnw compile:*)"
     ],
     "deny": [],
     "ask": []

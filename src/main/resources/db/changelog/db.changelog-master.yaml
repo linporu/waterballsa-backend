@@ -41,3 +41,6 @@ databaseChangeLog:
   - include:
       file: db/changelog/migrations/013-add-slug-to-journeys.sql
       relativeToChangelogFile: false
+  - include:
+      file: db/changelog/migrations/014-rename-mission-status-to-progress-status.sql
+      relativeToChangelogFile: false

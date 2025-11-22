@@ -59,6 +59,27 @@ public class GlobalExceptionHandler {
     return ResponseEntity.status(HttpStatus.FORBIDDEN).body(new ErrorResponse("禁止訪問"));
   }
 
+  @ExceptionHandler(ProgressAccessDeniedException.class)
+  public ResponseEntity<ErrorResponse> handleProgressAccessDenied(
+      ProgressAccessDeniedException ex) {
+    logger.warn("Progress access denied error: {}", ex.getMessage());
+    return ResponseEntity.status(HttpStatus.FORBIDDEN).body(new ErrorResponse("無法存取其他使用者的進度"));
+  }
+
+  @ExceptionHandler(UnsupportedMissionTypeException.class)
+  public ResponseEntity<ErrorResponse> handleUnsupportedMissionType(
+      UnsupportedMissionTypeException ex) {
+    logger.warn("Unsupported mission type error: {}", ex.getMessage());
+    return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(new ErrorResponse("此任務類型不支援進度追蹤"));
+  }
+
+  @ExceptionHandler(InvalidWatchPositionException.class)
+  public ResponseEntity<ErrorResponse> handleInvalidWatchPosition(
+      InvalidWatchPositionException ex) {
+    logger.warn("Invalid watch position error: {}", ex.getMessage());
+    return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(new ErrorResponse("觀看位置不可為負數"));
+  }
+
   @ExceptionHandler(MethodArgumentNotValidException.class)
   public ResponseEntity<ErrorResponse> handleValidationErrors(MethodArgumentNotValidException ex) {
     Map<String, String> errors = new HashMap<>();

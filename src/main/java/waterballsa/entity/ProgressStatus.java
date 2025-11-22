@@ -1,7 +1,7 @@
 package waterballsa.entity;
 
-/** Mission status enumeration. */
-public enum MissionStatus {
+/** Progress status enumeration. */
+public enum ProgressStatus {
   UNCOMPLETED,
   COMPLETED,
   DELIVERED

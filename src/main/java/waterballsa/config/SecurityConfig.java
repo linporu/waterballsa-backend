@@ -69,13 +69,14 @@ public class SecurityConfig {
                       response.setContentType("application/json");
                       response.setCharacterEncoding("UTF-8");
 
-                      ErrorResponse error = new ErrorResponse("Unauthorized or invalid token");
+                      ErrorResponse error = new ErrorResponse("登入資料已過期");
                       ObjectMapper mapper = new ObjectMapper();
                       response.getWriter().write(mapper.writeValueAsString(error));
                     }))
         .authorizeHttpRequests(
             auth ->
-                auth.requestMatchers("/auth/register", "/auth/login", "/healthz", "/actuator/**")
+                auth.requestMatchers(
+                        "/auth/register", "/auth/login", "/healthz", "/actuator/**", "/journeys/**")
                     .permitAll()
                     .anyRequest()
                     .authenticated())

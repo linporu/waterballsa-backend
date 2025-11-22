@@ -3,6 +3,7 @@
 
 -- Delete in order to respect foreign key constraints
 DELETE FROM user_mission_progress WHERE TRUE;
+DELETE FROM rewards WHERE TRUE;
 DELETE FROM mission_contents WHERE TRUE;
 DELETE FROM missions WHERE TRUE;
 DELETE FROM chapters WHERE TRUE;

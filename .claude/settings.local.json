@@ -3,7 +3,9 @@
     "allow": [
       "Bash(make lint:*)",
       "Bash(make test-e2e:*)",
-      "Bash(./mvnw test:*)"
+      "Bash(./mvnw test:*)",
+      "Bash(./mvnw clean:*)",
+      "Bash(cat:*)"
     ],
     "deny": [],
     "ask": []

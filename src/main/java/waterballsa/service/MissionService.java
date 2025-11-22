@@ -17,7 +17,6 @@ import waterballsa.entity.MissionContent;
 import waterballsa.exception.ForbiddenException;
 import waterballsa.exception.MissionNotFoundException;
 import waterballsa.repository.MissionRepository;
-import waterballsa.repository.UserJourneyPurchaseRepository;
 
 @Service
 public class MissionService {
@@ -26,13 +25,9 @@ public class MissionService {
   private static final Integer DEFAULT_EXPERIENCE_REWARD = 100;
 
   private final MissionRepository missionRepository;
-  private final UserJourneyPurchaseRepository userJourneyPurchaseRepository;
 
-  public MissionService(
-      MissionRepository missionRepository,
-      UserJourneyPurchaseRepository userJourneyPurchaseRepository) {
+  public MissionService(MissionRepository missionRepository) {
     this.missionRepository = missionRepository;
-    this.userJourneyPurchaseRepository = userJourneyPurchaseRepository;
   }
 
   /**

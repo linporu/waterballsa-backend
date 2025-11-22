@@ -46,8 +46,9 @@ public abstract class BaseE2ETest {
     registry.add("spring.datasource.url", postgres::getJdbcUrl);
     registry.add("spring.datasource.username", postgres::getUsername);
     registry.add("spring.datasource.password", postgres::getPassword);
-    registry.add("spring.jpa.hibernate.ddl-auto", () -> "create-drop");
-    registry.add("spring.liquibase.enabled", () -> "false");
+    // Use 'validate' since Liquibase manages the schema (including PostgreSQL ENUM types)
+    registry.add("spring.jpa.hibernate.ddl-auto", () -> "validate");
+    registry.add("spring.liquibase.enabled", () -> "true");
     // Configure HikariCP for test environment
     registry.add("spring.datasource.hikari.maximum-pool-size", () -> "5");
     registry.add("spring.datasource.hikari.minimum-idle", () -> "1");

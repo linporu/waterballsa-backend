@@ -89,7 +89,7 @@ VALUES
 -- Reset sequences to prevent ID conflicts
 SELECT
     SETVAL(
-        'courses_id_seq',
+        'journeys_id_seq',
         (
             SELECT
                 MAX(id)
@@ -113,7 +113,7 @@ SELECT
 
 SELECT
     SETVAL(
-        'units_id_seq',
+        'missions_id_seq',
         (
             SELECT
                 MAX(id)

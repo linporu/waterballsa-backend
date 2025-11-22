@@ -18,7 +18,9 @@ import org.springframework.test.context.jdbc.Sql;
  *   <li>GET /journeys/{journeyId}/missions/{missionId} - Get mission details
  * </ul>
  */
-@Sql(scripts = "/test-data/missions.sql", executionPhase = Sql.ExecutionPhase.BEFORE_TEST_METHOD)
+@Sql(
+    scripts = {"/test-data/cleanup.sql", "/test-data/missions.sql"},
+    executionPhase = Sql.ExecutionPhase.BEFORE_TEST_METHOD)
 @Sql(scripts = "/test-data/cleanup.sql", executionPhase = Sql.ExecutionPhase.AFTER_TEST_METHOD)
 class MissionE2ETest extends BaseE2ETest {
 

@@ -32,7 +32,7 @@ migrate-down:
 migrate-drop:
 	docker compose exec backend mvn liquibase:dropAll
 	@echo "Cleaning up remaining database types..."
-	docker compose exec -T db psql -U admin -d waterballsa < src/test/resources/test-data/cleanup.sql || true
+	docker compose exec -T db psql -U admin -d waterballsa < src/main/resources/db/drop-db.sql || true
 
 migrate-refresh:
 	@echo "Refreshing database: drop all and re-run migrations..."

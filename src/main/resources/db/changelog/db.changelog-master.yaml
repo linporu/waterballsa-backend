@@ -18,6 +18,9 @@ databaseChangeLog:
       file: db/changelog/migrations/006-rename-courses-to-journeys-and-units-to-missions.sql
       relativeToChangelogFile: false
   - include:
+      file: db/changelog/migrations/006a-rename-sequences-for-journeys-and-missions.sql
+      relativeToChangelogFile: false
+  - include:
       file: db/changelog/migrations/007-add-teacher-name-to-journeys.sql
       relativeToChangelogFile: false
   - include:

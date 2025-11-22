@@ -17,6 +17,7 @@ import waterballsa.entity.MissionContent;
 import waterballsa.exception.ForbiddenException;
 import waterballsa.exception.MissionNotFoundException;
 import waterballsa.repository.MissionRepository;
+import waterballsa.util.AuthenticationValidator;
 
 @Service
 public class MissionService {
@@ -83,9 +84,7 @@ public class MissionService {
     }
 
     // For AUTHENTICATED and PURCHASED, user must be logged in
-    if (userId == null) {
-      throw new waterballsa.exception.UnauthorizedException("Unauthorized or invalid token");
-    }
+    AuthenticationValidator.validateUserAuthenticated(userId);
 
     // AUTHENTICATED missions only require login
     if (accessLevel == MissionAccessLevel.AUTHENTICATED) {

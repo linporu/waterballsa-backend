@@ -8,8 +8,8 @@ import org.springframework.transaction.annotation.Transactional;
 import waterballsa.dto.UserMissionProgressResponse;
 import waterballsa.entity.Mission;
 import waterballsa.entity.MissionContent;
-import waterballsa.entity.ProgressStatus;
 import waterballsa.entity.MissionType;
+import waterballsa.entity.ProgressStatus;
 import waterballsa.entity.User;
 import waterballsa.entity.UserMissionProgress;
 import waterballsa.exception.InvalidWatchPositionException;
@@ -20,6 +20,7 @@ import waterballsa.exception.UnsupportedMissionTypeException;
 import waterballsa.repository.MissionRepository;
 import waterballsa.repository.UserMissionProgressRepository;
 import waterballsa.repository.UserRepository;
+import waterballsa.util.AuthenticationValidator;
 
 @Service
 public class ProgressService {
@@ -136,9 +137,7 @@ public class ProgressService {
   }
 
   private void validateAuthentication(Long currentUserId) {
-    if (currentUserId == null) {
-      throw new UnauthorizedException("Unauthorized or invalid token");
-    }
+    AuthenticationValidator.validateUserAuthenticated(currentUserId);
   }
 
   private void validateUserAccess(Long pathUserId, Long currentUserId) {

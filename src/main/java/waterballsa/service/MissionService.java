@@ -53,23 +53,25 @@ public class MissionService {
             .findByIdWithDetails(missionId)
             .orElseThrow(() -> new MissionNotFoundException(missionId));
 
-    // Validate mission belongs to the specified journey
-    Long actualJourneyId = mission.getChapter().getJourney().getId();
-    if (!actualJourneyId.equals(journeyId)) {
-      logger.warn(
-          "Mission {} does not belong to journey {}. Actual journey: {}",
-          missionId,
-          journeyId,
-          actualJourneyId);
-      throw new MissionNotFoundException("Mission not found in the specified journey");
-    }
+    validateMissionBelongsToJourney(mission, journeyId);
 
-    // Check access permissions
     checkMissionAccess(mission, userId);
 
     logger.info("Successfully fetched mission: {} for user: {}", missionId, userId);
 
     return mapToMissionDetailResponse(mission);
+  }
+
+  private void validateMissionBelongsToJourney(Mission mission, Long journeyId) {
+    Long actualJourneyId = mission.getChapter().getJourney().getId();
+    if (!actualJourneyId.equals(journeyId)) {
+      logger.warn(
+          "Mission {} does not belong to journey {}. Actual journey: {}",
+          mission.getId(),
+          journeyId,
+          actualJourneyId);
+      throw new MissionNotFoundException("Mission not found in the specified journey");
+    }
   }
 
   private void checkMissionAccess(Mission mission, Long userId) {

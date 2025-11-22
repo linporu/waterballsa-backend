@@ -6,6 +6,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.lang.NonNull;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import waterballsa.dto.DeliverResponse;
 import waterballsa.dto.UserMissionProgressResponse;
 import waterballsa.entity.Mission;
 import waterballsa.entity.MissionContent;
@@ -14,6 +15,8 @@ import waterballsa.entity.ProgressStatus;
 import waterballsa.entity.User;
 import waterballsa.entity.UserMissionProgress;
 import waterballsa.exception.InvalidWatchPositionException;
+import waterballsa.exception.MissionAlreadyDeliveredException;
+import waterballsa.exception.MissionNotCompletedException;
 import waterballsa.exception.MissionNotFoundException;
 import waterballsa.exception.ProgressAccessDeniedException;
 import waterballsa.exception.UnauthorizedException;
@@ -27,6 +30,7 @@ import waterballsa.util.AuthenticationValidator;
 public class ProgressService {
 
   private static final Logger logger = LoggerFactory.getLogger(ProgressService.class);
+  private static final Integer DEFAULT_EXPERIENCE_REWARD = 100;
 
   private final UserMissionProgressRepository progressRepository;
   private final MissionRepository missionRepository;
@@ -198,5 +202,90 @@ public class ProgressService {
         progress.getMission().getId(),
         progress.getStatus().name(),
         progress.getWatchPositionSeconds());
+  }
+
+  /**
+   * Deliver a mission to receive experience points.
+   *
+   * @param pathUserId User ID from path parameter
+   * @param missionId Mission ID
+   * @param currentUserId Current authenticated user ID
+   * @return DeliverResponse with experience gained and user stats
+   */
+  @Transactional
+  public DeliverResponse deliverMission(
+      @NonNull Long pathUserId, Long missionId, Long currentUserId) {
+    logger.debug(
+        "Delivering mission for user: {}, mission: {}, currentUser: {}",
+        pathUserId,
+        missionId,
+        currentUserId);
+
+    validateAuthentication(currentUserId);
+    validateUserAccess(pathUserId, currentUserId);
+
+    Mission mission = validateMissionExistsAndReturn(missionId);
+    User user = findUserOrThrow(pathUserId);
+    UserMissionProgress progress = findProgress(pathUserId, missionId);
+
+    validateNotAlreadyDelivered(progress);
+    validateVideoMissionCompleted(mission, progress);
+
+    progress = getOrCreateProgress(user, mission, progress);
+    progress.markAsDelivered();
+    progressRepository.save(progress);
+
+    Integer experienceGained = grantExperienceReward(user);
+
+    logger.info(
+        "Successfully delivered mission for user: {}, mission: {}, XP gained: {}",
+        pathUserId,
+        missionId,
+        experienceGained);
+
+    return new DeliverResponse(
+        "任務交付成功", experienceGained, user.getExperiencePoints(), user.getLevel());
+  }
+
+  private User findUserOrThrow(@NonNull Long userId) {
+    return userRepository
+        .findById(userId)
+        .orElseThrow(() -> new UnauthorizedException("User not found: " + userId));
+  }
+
+  private UserMissionProgress findProgress(Long userId, Long missionId) {
+    return progressRepository
+        .findByUserIdAndMissionIdAndDeletedAtIsNull(userId, missionId)
+        .orElse(null);
+  }
+
+  private void validateNotAlreadyDelivered(UserMissionProgress progress) {
+    if (progress != null && progress.getStatus() == ProgressStatus.DELIVERED) {
+      throw new MissionAlreadyDeliveredException("Mission has already been delivered");
+    }
+  }
+
+  private void validateVideoMissionCompleted(Mission mission, UserMissionProgress progress) {
+    boolean isVideoMission = mission.getType() == MissionType.VIDEO;
+    boolean isNotCompleted = progress == null || progress.getStatus() != ProgressStatus.COMPLETED;
+
+    if (isVideoMission && isNotCompleted) {
+      throw new MissionNotCompletedException("Video mission must be COMPLETED before delivery");
+    }
+  }
+
+  private UserMissionProgress getOrCreateProgress(
+      User user, Mission mission, UserMissionProgress progress) {
+    if (progress == null) {
+      return new UserMissionProgress(user, mission);
+    }
+    return progress;
+  }
+
+  private Integer grantExperienceReward(User user) {
+    Integer experienceGained = DEFAULT_EXPERIENCE_REWARD;
+    user.addExperience(experienceGained);
+    userRepository.save(user);
+    return experienceGained;
   }
 }

@@ -8,10 +8,12 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+import waterballsa.dto.DeliverResponse;
 import waterballsa.dto.UpdateProgressRequest;
 import waterballsa.dto.UserMissionProgressResponse;
 import waterballsa.service.ProgressService;
@@ -80,6 +82,31 @@ public class ProgressController {
         userId,
         missionId,
         response.status());
+
+    return ResponseEntity.ok(response);
+  }
+
+  /**
+   * Deliver a mission to receive experience points.
+   *
+   * @param userId User ID from path
+   * @param missionId Mission ID
+   * @return DeliverResponse with experience gained and user stats
+   */
+  @PostMapping("/{userId}/missions/{missionId}/progress/deliver")
+  public ResponseEntity<DeliverResponse> deliverMission(
+      @PathVariable Long userId, @PathVariable Long missionId) {
+    logger.debug("POST /users/{}/missions/{}/progress/deliver request received", userId, missionId);
+
+    Long currentUserId = getCurrentUserId();
+
+    DeliverResponse response = progressService.deliverMission(userId, missionId, currentUserId);
+
+    logger.info(
+        "Successfully delivered mission for userId: {}, missionId: {}, XP gained: {}",
+        userId,
+        missionId,
+        response.experienceGained());
 
     return ResponseEntity.ok(response);
   }

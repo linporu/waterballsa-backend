@@ -108,6 +108,11 @@ public class User {
     this.deletedAt = LocalDateTime.now();
   }
 
+  public void addExperience(Integer points) {
+    this.experiencePoints += points;
+    // Level calculation will be implemented later
+  }
+
   public enum UserRole {
     STUDENT,
     TEACHER,

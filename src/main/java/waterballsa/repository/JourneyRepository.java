@@ -1,5 +1,6 @@
 package waterballsa.repository;
 
+import java.util.List;
 import java.util.Optional;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
@@ -25,4 +26,12 @@ public interface JourneyRepository extends JpaRepository<Journey, Long> {
   Optional<Journey> findByIdWithChapters(@Param("id") Long id);
 
   Optional<Journey> findByIdAndDeletedAtIsNull(Long id);
+
+  /**
+   * Find all journeys that are not soft-deleted, ordered by creation time (oldest first).
+   *
+   * @return List of journeys
+   */
+  @Query("SELECT j FROM Journey j WHERE j.deletedAt IS NULL ORDER BY j.createdAt ASC")
+  List<Journey> findAllNotDeleted();
 }

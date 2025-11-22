@@ -9,6 +9,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import waterballsa.dto.ChapterDTO;
 import waterballsa.dto.JourneyDetailResponse;
+import waterballsa.dto.JourneyListItemDTO;
+import waterballsa.dto.JourneyListResponse;
 import waterballsa.dto.MissionSummaryDTO;
 import waterballsa.entity.Chapter;
 import waterballsa.entity.Journey;
@@ -25,6 +27,25 @@ public class JourneyService {
 
   public JourneyService(JourneyRepository journeyRepository) {
     this.journeyRepository = journeyRepository;
+  }
+
+  /**
+   * Get all journeys ordered by creation time (oldest first).
+   *
+   * @return JourneyListResponse containing list of all non-deleted journeys
+   */
+  @Transactional(readOnly = true)
+  public JourneyListResponse getJourneys() {
+    logger.debug("Fetching all journeys");
+
+    List<Journey> journeys = journeyRepository.findAllNotDeleted();
+
+    logger.info("Successfully fetched {} journeys", journeys.size());
+
+    List<JourneyListItemDTO> journeyList =
+        journeys.stream().map(this::mapToJourneyListItemDTO).collect(Collectors.toList());
+
+    return new JourneyListResponse(journeyList);
   }
 
   /**
@@ -88,5 +109,15 @@ public class JourneyService {
         mission.getAccessLevel().name(),
         mission.getOrderIndex(),
         null); // status will be null for now (not implemented yet)
+  }
+
+  private JourneyListItemDTO mapToJourneyListItemDTO(Journey journey) {
+    return new JourneyListItemDTO(
+        journey.getId(),
+        journey.getSlug(),
+        journey.getTitle(),
+        journey.getDescription(),
+        journey.getCoverImageUrl(),
+        journey.getTeacherName());
   }
 }

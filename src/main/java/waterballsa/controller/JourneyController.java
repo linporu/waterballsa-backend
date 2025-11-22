@@ -8,6 +8,7 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import waterballsa.dto.JourneyDetailResponse;
+import waterballsa.dto.JourneyListResponse;
 import waterballsa.service.JourneyService;
 
 @RestController
@@ -20,6 +21,22 @@ public class JourneyController {
 
   public JourneyController(JourneyService journeyService) {
     this.journeyService = journeyService;
+  }
+
+  /**
+   * Get all journeys.
+   *
+   * @return Journey list response
+   */
+  @GetMapping
+  public ResponseEntity<JourneyListResponse> getJourneys() {
+    logger.debug("GET /journeys request received");
+
+    JourneyListResponse response = journeyService.getJourneys();
+
+    logger.info("Successfully returned journey list with {} journeys", response.journeys().size());
+
+    return ResponseEntity.ok(response);
   }
 
   /**

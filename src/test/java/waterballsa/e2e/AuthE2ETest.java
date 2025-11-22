@@ -184,12 +184,7 @@ class AuthE2ETest extends BaseE2ETest {
   @DisplayName("Should fail to logout without Authorization header")
   void shouldFailToLogoutWithoutAuthorizationHeader() {
     // Attempt logout without Authorization header
-    given()
-        .when()
-        .post("/auth/logout")
-        .then()
-        .statusCode(401)
-        .body("error", equalTo("登入資料已過期"));
+    given().when().post("/auth/logout").then().statusCode(401).body("error", equalTo("登入資料已過期"));
   }
 
   @Test

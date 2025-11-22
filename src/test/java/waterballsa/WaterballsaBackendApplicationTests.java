@@ -9,16 +9,17 @@ import org.testcontainers.containers.PostgreSQLContainer;
 @SpringBootTest
 class WaterballsaBackendApplicationTests {
 
-  @SuppressWarnings("resource")
   static final PostgreSQLContainer<?> postgres;
 
   static {
-    postgres =
+    @SuppressWarnings("resource")
+    PostgreSQLContainer<?> container =
         new PostgreSQLContainer<>("postgres:15-alpine")
             .withDatabaseName("test")
             .withUsername("test")
             .withPassword("test");
-    postgres.start();
+    container.start();
+    postgres = container;
   }
 
   @DynamicPropertySource

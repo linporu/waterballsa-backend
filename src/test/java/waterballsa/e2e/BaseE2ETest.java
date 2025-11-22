@@ -29,16 +29,18 @@ import org.testcontainers.containers.PostgreSQLContainer;
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 public abstract class BaseE2ETest {
 
-  @SuppressWarnings("resource") // Container lifecycle managed manually via static block
   static final PostgreSQLContainer<?> postgres;
 
+  // Container lifecycle managed by Testcontainers Ryuk - no manual cleanup needed
   static {
-    postgres =
+    @SuppressWarnings("resource")
+    PostgreSQLContainer<?> container =
         new PostgreSQLContainer<>("postgres:15-alpine")
             .withDatabaseName("e2e_test")
             .withUsername("test")
             .withPassword("test");
-    postgres.start();
+    container.start();
+    postgres = container;
   }
 
   @DynamicPropertySource

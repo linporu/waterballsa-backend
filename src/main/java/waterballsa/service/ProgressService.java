@@ -3,6 +3,7 @@ package waterballsa.service;
 import java.util.Comparator;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.lang.NonNull;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import waterballsa.dto.UserMissionProgressResponse;
@@ -86,7 +87,7 @@ public class ProgressService {
    */
   @Transactional
   public UserMissionProgressResponse updateProgress(
-      Long pathUserId, Long missionId, Integer watchPositionSeconds, Long currentUserId) {
+      @NonNull Long pathUserId, Long missionId, Integer watchPositionSeconds, Long currentUserId) {
     logger.debug(
         "Updating progress for user: {}, mission: {}, watchPosition: {}, currentUser: {}",
         pathUserId,

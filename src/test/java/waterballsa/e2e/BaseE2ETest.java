@@ -11,39 +11,49 @@ import org.springframework.boot.test.web.server.LocalServerPort;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
 import org.testcontainers.containers.PostgreSQLContainer;
-import org.testcontainers.junit.jupiter.Container;
-import org.testcontainers.junit.jupiter.Testcontainers;
 
 /**
  * Base class for all E2E tests. This class provides:
  *
  * <ul>
- *   <li>PostgreSQL container setup using Testcontainers
+ *   <li>PostgreSQL container setup using Testcontainers (singleton pattern)
  *   <li>REST Assured configuration
  *   <li>Common utility methods for testing
  * </ul>
  *
  * <p>All E2E test classes should extend this base class to inherit the common setup.
+ *
+ * <p>Uses the singleton container pattern to ensure a single PostgreSQL container is shared across
+ * all test classes, avoiding connection issues when Spring contexts are reused.
  */
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
-@Testcontainers
 public abstract class BaseE2ETest {
 
-  @Container
-  @SuppressWarnings("resource") // Container lifecycle managed by Testcontainers
-  static PostgreSQLContainer<?> postgres =
-      new PostgreSQLContainer<>("postgres:15-alpine")
-          .withDatabaseName("e2e_test")
-          .withUsername("test")
-          .withPassword("test")
-          .withReuse(true); // Reuse container across test classes for faster execution
+  static final PostgreSQLContainer<?> postgres;
+
+  // Container lifecycle managed by Testcontainers Ryuk - no manual cleanup needed
+  static {
+    @SuppressWarnings("resource")
+    PostgreSQLContainer<?> container =
+        new PostgreSQLContainer<>("postgres:15-alpine")
+            .withDatabaseName("e2e_test")
+            .withUsername("test")
+            .withPassword("test");
+    container.start();
+    postgres = container;
+  }
 
   @DynamicPropertySource
   static void configureProperties(DynamicPropertyRegistry registry) {
     registry.add("spring.datasource.url", postgres::getJdbcUrl);
     registry.add("spring.datasource.username", postgres::getUsername);
     registry.add("spring.datasource.password", postgres::getPassword);
-    registry.add("spring.jpa.hibernate.ddl-auto", () -> "create-drop");
+    // Use 'validate' since Liquibase manages the schema (including PostgreSQL ENUM types)
+    registry.add("spring.jpa.hibernate.ddl-auto", () -> "validate");
+    registry.add("spring.liquibase.enabled", () -> "true");
+    // Configure HikariCP for test environment
+    registry.add("spring.datasource.hikari.maximum-pool-size", () -> "5");
+    registry.add("spring.datasource.hikari.minimum-idle", () -> "1");
   }
 
   @LocalServerPort protected int port;

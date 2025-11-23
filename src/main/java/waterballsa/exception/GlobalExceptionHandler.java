@@ -80,6 +80,19 @@ public class GlobalExceptionHandler {
     return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(new ErrorResponse("觀看位置不可為負數"));
   }
 
+  @ExceptionHandler(MissionNotCompletedException.class)
+  public ResponseEntity<ErrorResponse> handleMissionNotCompleted(MissionNotCompletedException ex) {
+    logger.warn("Mission not completed error: {}", ex.getMessage());
+    return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(new ErrorResponse("影片任務必須先完成觀看才能交付"));
+  }
+
+  @ExceptionHandler(MissionAlreadyDeliveredException.class)
+  public ResponseEntity<ErrorResponse> handleMissionAlreadyDelivered(
+      MissionAlreadyDeliveredException ex) {
+    logger.warn("Mission already delivered error: {}", ex.getMessage());
+    return ResponseEntity.status(HttpStatus.CONFLICT).body(new ErrorResponse("此任務已經交付過了"));
+  }
+
   @ExceptionHandler(MethodArgumentNotValidException.class)
   public ResponseEntity<ErrorResponse> handleValidationErrors(MethodArgumentNotValidException ex) {
     Map<String, String> errors = new HashMap<>();

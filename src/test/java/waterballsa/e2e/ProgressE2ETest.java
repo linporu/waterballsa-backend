@@ -390,4 +390,274 @@ class ProgressE2ETest extends BaseE2ETest {
           .body("watchPositionSeconds", equalTo(50));
     }
   }
+
+  // ==================== POST /users/{userId}/missions/{missionId}/progress/deliver Tests
+  // ====================
+
+  @Nested
+  @DisplayName("POST /users/{userId}/missions/{missionId}/progress/deliver")
+  class DeliverMissionTests {
+
+    @Test
+    @DisplayName("Should deliver completed VIDEO mission and grant XP")
+    void shouldDeliverCompletedVideoMission() {
+      // First complete the video mission (Mission 1: VIDEO, 256 seconds)
+      given()
+          .header("Authorization", bearerToken(userToken))
+          .contentType(ContentType.JSON)
+          .body("{\"watchPositionSeconds\": 256}")
+          .when()
+          .put("/users/{userId}/missions/{missionId}/progress", userId, 1)
+          .then()
+          .statusCode(200)
+          .body("status", equalTo("COMPLETED"));
+
+      // Deliver the mission
+      given()
+          .header("Authorization", bearerToken(userToken))
+          .contentType(ContentType.JSON)
+          .when()
+          .post("/users/{userId}/missions/{missionId}/progress/deliver", userId, 1)
+          .then()
+          .statusCode(200)
+          .body("message", equalTo("任務交付成功"))
+          .body("experienceGained", equalTo(100))
+          .body("totalExperience", equalTo(100))
+          .body("currentLevel", equalTo(1));
+
+      // Verify progress status changed to DELIVERED
+      given()
+          .header("Authorization", bearerToken(userToken))
+          .when()
+          .get("/users/{userId}/missions/{missionId}/progress", userId, 1)
+          .then()
+          .statusCode(200)
+          .body("status", equalTo("DELIVERED"));
+    }
+
+    @Test
+    @DisplayName("Should deliver ARTICLE mission directly without progress")
+    void shouldDeliverArticleMissionDirectly() {
+      // Mission 3 is ARTICLE type - can deliver directly without progress
+      given()
+          .header("Authorization", bearerToken(userToken))
+          .contentType(ContentType.JSON)
+          .when()
+          .post("/users/{userId}/missions/{missionId}/progress/deliver", userId, 3)
+          .then()
+          .statusCode(200)
+          .body("message", equalTo("任務交付成功"))
+          .body("experienceGained", equalTo(100))
+          .body("totalExperience", equalTo(100))
+          .body("currentLevel", equalTo(1));
+
+      // Verify progress record was created with DELIVERED status
+      given()
+          .header("Authorization", bearerToken(userToken))
+          .when()
+          .get("/users/{userId}/missions/{missionId}/progress", userId, 3)
+          .then()
+          .statusCode(200)
+          .body("status", equalTo("DELIVERED"));
+    }
+
+    @Test
+    @DisplayName("Should deliver QUESTIONNAIRE mission directly")
+    void shouldDeliverQuestionnaireMissionDirectly() {
+      // Mission 6 is QUESTIONNAIRE type - can deliver directly without progress
+      given()
+          .header("Authorization", bearerToken(userToken))
+          .contentType(ContentType.JSON)
+          .when()
+          .post("/users/{userId}/missions/{missionId}/progress/deliver", userId, 6)
+          .then()
+          .statusCode(200)
+          .body("message", equalTo("任務交付成功"))
+          .body("experienceGained", equalTo(100))
+          .body("totalExperience", equalTo(100))
+          .body("currentLevel", equalTo(1));
+
+      // Verify progress record was created with DELIVERED status
+      given()
+          .header("Authorization", bearerToken(userToken))
+          .when()
+          .get("/users/{userId}/missions/{missionId}/progress", userId, 6)
+          .then()
+          .statusCode(200)
+          .body("status", equalTo("DELIVERED"));
+    }
+
+    @Test
+    @DisplayName("Should accumulate experience when delivering multiple missions")
+    void shouldAccumulateExperienceFromMultipleMissions() {
+      // Deliver ARTICLE mission first (Mission 3)
+      given()
+          .header("Authorization", bearerToken(userToken))
+          .contentType(ContentType.JSON)
+          .when()
+          .post("/users/{userId}/missions/{missionId}/progress/deliver", userId, 3)
+          .then()
+          .statusCode(200)
+          .body("totalExperience", equalTo(100));
+
+      // Complete and deliver VIDEO mission (Mission 1)
+      given()
+          .header("Authorization", bearerToken(userToken))
+          .contentType(ContentType.JSON)
+          .body("{\"watchPositionSeconds\": 256}")
+          .when()
+          .put("/users/{userId}/missions/{missionId}/progress", userId, 1)
+          .then()
+          .statusCode(200);
+
+      given()
+          .header("Authorization", bearerToken(userToken))
+          .contentType(ContentType.JSON)
+          .when()
+          .post("/users/{userId}/missions/{missionId}/progress/deliver", userId, 1)
+          .then()
+          .statusCode(200)
+          .body("experienceGained", equalTo(100))
+          .body("totalExperience", equalTo(200)); // 100 + 100
+
+      // Deliver QUESTIONNAIRE mission (Mission 6)
+      given()
+          .header("Authorization", bearerToken(userToken))
+          .contentType(ContentType.JSON)
+          .when()
+          .post("/users/{userId}/missions/{missionId}/progress/deliver", userId, 6)
+          .then()
+          .statusCode(200)
+          .body("experienceGained", equalTo(100))
+          .body("totalExperience", equalTo(300)); // 100 + 100 + 100
+    }
+
+    @Test
+    @DisplayName("Should return 400 when VIDEO mission not completed")
+    void shouldReturn400WhenVideoMissionNotCompleted() {
+      // Try to deliver VIDEO mission without completing it first
+      given()
+          .header("Authorization", bearerToken(userToken))
+          .contentType(ContentType.JSON)
+          .when()
+          .post("/users/{userId}/missions/{missionId}/progress/deliver", userId, 1)
+          .then()
+          .statusCode(400)
+          .body("error", equalTo("影片任務必須先完成觀看才能交付"));
+    }
+
+    @Test
+    @DisplayName("Should return 400 when VIDEO mission partially completed")
+    void shouldReturn400WhenVideoMissionPartiallyCompleted() {
+      // Partially complete the video mission (not 100%)
+      given()
+          .header("Authorization", bearerToken(userToken))
+          .contentType(ContentType.JSON)
+          .body("{\"watchPositionSeconds\": 100}")
+          .when()
+          .put("/users/{userId}/missions/{missionId}/progress", userId, 1)
+          .then()
+          .statusCode(200)
+          .body("status", equalTo("UNCOMPLETED"));
+
+      // Try to deliver - should fail
+      given()
+          .header("Authorization", bearerToken(userToken))
+          .contentType(ContentType.JSON)
+          .when()
+          .post("/users/{userId}/missions/{missionId}/progress/deliver", userId, 1)
+          .then()
+          .statusCode(400)
+          .body("error", equalTo("影片任務必須先完成觀看才能交付"));
+    }
+
+    @Test
+    @DisplayName("Should return 409 when mission already delivered")
+    void shouldReturn409WhenMissionAlreadyDelivered() {
+      // First complete and deliver the mission
+      given()
+          .header("Authorization", bearerToken(userToken))
+          .contentType(ContentType.JSON)
+          .body("{\"watchPositionSeconds\": 256}")
+          .when()
+          .put("/users/{userId}/missions/{missionId}/progress", userId, 1)
+          .then()
+          .statusCode(200);
+
+      given()
+          .header("Authorization", bearerToken(userToken))
+          .contentType(ContentType.JSON)
+          .when()
+          .post("/users/{userId}/missions/{missionId}/progress/deliver", userId, 1)
+          .then()
+          .statusCode(200);
+
+      // Try to deliver again - should fail with 409
+      given()
+          .header("Authorization", bearerToken(userToken))
+          .contentType(ContentType.JSON)
+          .when()
+          .post("/users/{userId}/missions/{missionId}/progress/deliver", userId, 1)
+          .then()
+          .statusCode(409)
+          .body("error", equalTo("此任務已經交付過了"));
+    }
+
+    @Test
+    @DisplayName("Should return 401 when not authenticated")
+    void shouldReturn401WhenNotAuthenticated() {
+      given()
+          .contentType(ContentType.JSON)
+          .when()
+          .post("/users/{userId}/missions/{missionId}/progress/deliver", userId, 1)
+          .then()
+          .statusCode(401)
+          .body("error", equalTo("登入資料已過期"));
+    }
+
+    @Test
+    @DisplayName("Should return 403 when delivering other user's mission")
+    void shouldReturn403WhenDeliveringOtherUserMission() {
+      // Register another user
+      String anotherUsername = "another_" + System.currentTimeMillis();
+      Long anotherUserId = registerUser(anotherUsername, "Test1234!");
+
+      // Try to deliver another user's mission with current user's token
+      given()
+          .header("Authorization", bearerToken(userToken))
+          .contentType(ContentType.JSON)
+          .when()
+          .post("/users/{userId}/missions/{missionId}/progress/deliver", anotherUserId, 1)
+          .then()
+          .statusCode(403)
+          .body("error", equalTo("無法存取其他使用者的進度"));
+    }
+
+    @Test
+    @DisplayName("Should return 404 when mission does not exist")
+    void shouldReturn404WhenMissionNotFound() {
+      given()
+          .header("Authorization", bearerToken(userToken))
+          .contentType(ContentType.JSON)
+          .when()
+          .post("/users/{userId}/missions/{missionId}/progress/deliver", userId, 99999)
+          .then()
+          .statusCode(404)
+          .body("error", equalTo("查無此任務"));
+    }
+
+    @Test
+    @DisplayName("Should return 404 when mission is soft deleted")
+    void shouldReturn404WhenMissionIsSoftDeleted() {
+      // Mission 999 is soft deleted in missions.sql
+      given()
+          .header("Authorization", bearerToken(userToken))
+          .contentType(ContentType.JSON)
+          .when()
+          .post("/users/{userId}/missions/{missionId}/progress/deliver", userId, 999)
+          .then()
+          .statusCode(404)
+          .body("error", equalTo("查無此任務"));
+    }
+  }
 }

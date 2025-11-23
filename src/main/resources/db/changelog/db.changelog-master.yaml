@@ -47,3 +47,6 @@ databaseChangeLog:
   - include:
       file: db/changelog/migrations/015-update-video-duration-to-26-seconds.sql
       relativeToChangelogFile: false
+  - include:
+      file: db/changelog/migrations/016-fix-experience-values-and-access-levels.sql
+      relativeToChangelogFile: false

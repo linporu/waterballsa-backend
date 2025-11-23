@@ -95,7 +95,7 @@ public class ProgressController {
    */
   @PostMapping("/{userId}/missions/{missionId}/progress/deliver")
   public ResponseEntity<DeliverResponse> deliverMission(
-      @PathVariable Long userId, @PathVariable Long missionId) {
+      @PathVariable @NonNull Long userId, @PathVariable Long missionId) {
     logger.debug("POST /users/{}/missions/{}/progress/deliver request received", userId, missionId);
 
     Long currentUserId = getCurrentUserId();

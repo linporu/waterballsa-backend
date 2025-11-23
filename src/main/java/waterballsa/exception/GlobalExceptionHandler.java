@@ -41,6 +41,12 @@ public class GlobalExceptionHandler {
     return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(new ErrorResponse("登入資料已過期"));
   }
 
+  @ExceptionHandler(UserNotFoundException.class)
+  public ResponseEntity<ErrorResponse> handleUserNotFound(UserNotFoundException ex) {
+    logger.warn("User not found error: {}", ex.getMessage());
+    return ResponseEntity.status(HttpStatus.NOT_FOUND).body(new ErrorResponse("使用者不存在"));
+  }
+
   @ExceptionHandler(JourneyNotFoundException.class)
   public ResponseEntity<ErrorResponse> handleJourneyNotFound(JourneyNotFoundException ex) {
     logger.warn("Journey not found error: {}", ex.getMessage());

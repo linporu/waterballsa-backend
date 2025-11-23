@@ -12,6 +12,7 @@ import org.springframework.security.authentication.UsernamePasswordAuthenticatio
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
+import waterballsa.repository.AccessTokenRepository;
 import waterballsa.util.JwtUtil;
 
 /**
@@ -22,6 +23,7 @@ import waterballsa.util.JwtUtil;
  * <ul>
  *   <li>Extracts Bearer token from Authorization header
  *   <li>Validates the token using JwtUtil
+ *   <li>Checks if token is blacklisted
  *   <li>Sets authentication in SecurityContext if token is valid
  * </ul>
  */
@@ -33,9 +35,11 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
   private static final String BEARER_PREFIX = "Bearer ";
 
   private final JwtUtil jwtUtil;
+  private final AccessTokenRepository accessTokenRepository;
 
-  public JwtAuthenticationFilter(JwtUtil jwtUtil) {
+  public JwtAuthenticationFilter(JwtUtil jwtUtil, AccessTokenRepository accessTokenRepository) {
     this.jwtUtil = jwtUtil;
+    this.accessTokenRepository = accessTokenRepository;
   }
 
   @Override
@@ -61,6 +65,14 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     }
 
     try {
+      // Check if token is blacklisted
+      String jti = jwtUtil.getJtiFromToken(token);
+      if (accessTokenRepository.existsByTokenJti(jti)) {
+        logger.debug("Token is blacklisted (logged out): {}", jti);
+        filterChain.doFilter(request, response);
+        return;
+      }
+
       Long userId = jwtUtil.getUserIdFromToken(token);
       String username = jwtUtil.getUsernameFromToken(token);
 

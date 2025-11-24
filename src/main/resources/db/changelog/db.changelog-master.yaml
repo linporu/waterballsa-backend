@@ -50,3 +50,12 @@ databaseChangeLog:
   - include:
       file: db/changelog/migrations/016-fix-experience-values-and-access-levels.sql
       relativeToChangelogFile: false
+  - include:
+      file: db/changelog/migrations/017-create-orders-table.sql
+      relativeToChangelogFile: false
+  - include:
+      file: db/changelog/migrations/018-create-order-items-table.sql
+      relativeToChangelogFile: false
+  - include:
+      file: db/changelog/migrations/019-create-user-journeys-table.sql
+      relativeToChangelogFile: false

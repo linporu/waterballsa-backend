@@ -1,0 +1,52 @@
+package waterballsa.repository;
+
+import java.util.Optional;
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
+import org.springframework.stereotype.Repository;
+import waterballsa.entity.Order;
+import waterballsa.entity.OrderStatus;
+
+@Repository
+public interface OrderRepository extends JpaRepository<Order, Long> {
+
+  /**
+   * Find order by order number.
+   *
+   * @param orderNumber Order number
+   * @return Optional of Order
+   */
+  Optional<Order> findByOrderNumber(String orderNumber);
+
+  /**
+   * Find order by ID and user ID (for ownership verification).
+   *
+   * @param id Order ID
+   * @param userId User ID
+   * @return Optional of Order
+   */
+  Optional<Order> findByIdAndUserId(Long id, Long userId);
+
+  /**
+   * Find unpaid order by user ID and journey ID. Used to check if user already has an unpaid order
+   * for the same journey. Returns the most recent order if multiple exist.
+   *
+   * @param userId User ID
+   * @param status Order status
+   * @param journeyId Journey ID
+   * @return Optional of Order
+   */
+  @Query(
+      "SELECT o FROM Order o "
+          + "JOIN o.items oi "
+          + "WHERE o.userId = :userId "
+          + "AND o.status = :status "
+          + "AND oi.journeyId = :journeyId "
+          + "AND o.deletedAt IS NULL "
+          + "ORDER BY o.createdAt DESC LIMIT 1")
+  Optional<Order> findByUserIdAndStatusAndJourneyId(
+      @Param("userId") Long userId,
+      @Param("status") OrderStatus status,
+      @Param("journeyId") Long journeyId);
+}

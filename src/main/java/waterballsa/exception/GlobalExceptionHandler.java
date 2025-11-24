@@ -99,6 +99,31 @@ public class GlobalExceptionHandler {
     return ResponseEntity.status(HttpStatus.CONFLICT).body(new ErrorResponse("此任務已經交付過了"));
   }
 
+  @ExceptionHandler(OrderNotFoundException.class)
+  public ResponseEntity<ErrorResponse> handleOrderNotFound(OrderNotFoundException ex) {
+    logger.warn("Order not found error: {}", ex.getMessage());
+    return ResponseEntity.status(HttpStatus.NOT_FOUND).body(new ErrorResponse("訂單不存在"));
+  }
+
+  @ExceptionHandler(OrderAlreadyPaidException.class)
+  public ResponseEntity<ErrorResponse> handleOrderAlreadyPaid(OrderAlreadyPaidException ex) {
+    logger.warn("Order already paid error: {}", ex.getMessage());
+    return ResponseEntity.status(HttpStatus.CONFLICT).body(new ErrorResponse("訂單已經付款"));
+  }
+
+  @ExceptionHandler(JourneyAlreadyPurchasedException.class)
+  public ResponseEntity<ErrorResponse> handleJourneyAlreadyPurchased(
+      JourneyAlreadyPurchasedException ex) {
+    logger.warn("Journey already purchased error: {}", ex.getMessage());
+    return ResponseEntity.status(HttpStatus.CONFLICT).body(new ErrorResponse("你已經購買此課程"));
+  }
+
+  @ExceptionHandler(InvalidJourneyIdException.class)
+  public ResponseEntity<ErrorResponse> handleInvalidJourneyId(InvalidJourneyIdException ex) {
+    logger.warn("Invalid journey ID error: {}", ex.getMessage());
+    return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(new ErrorResponse("無效的課程 ID"));
+  }
+
   @ExceptionHandler(MethodArgumentNotValidException.class)
   public ResponseEntity<ErrorResponse> handleValidationErrors(MethodArgumentNotValidException ex) {
     Map<String, String> errors = new HashMap<>();

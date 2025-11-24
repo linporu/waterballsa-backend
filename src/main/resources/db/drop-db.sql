@@ -4,6 +4,9 @@
 -- Drop application tables (order matters due to foreign key constraints)
 -- Current tables
 DROP TABLE IF EXISTS user_mission_progress CASCADE;
+DROP TABLE IF EXISTS order_items CASCADE;
+DROP TABLE IF EXISTS user_journeys CASCADE;
+DROP TABLE IF EXISTS orders CASCADE;
 DROP TABLE IF EXISTS rewards CASCADE;
 DROP TABLE IF EXISTS mission_contents CASCADE;
 DROP TABLE IF EXISTS missions CASCADE;
@@ -31,3 +34,4 @@ DROP TYPE IF EXISTS mission_status CASCADE;
 DROP TYPE IF EXISTS mission_type CASCADE;
 DROP TYPE IF EXISTS reward_type CASCADE;
 DROP TYPE IF EXISTS user_role CASCADE;
+DROP TYPE IF EXISTS order_status CASCADE;

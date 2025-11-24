@@ -6,7 +6,8 @@
       "Bash(./mvnw test:*)",
       "Bash(./mvnw clean:*)",
       "Bash(cat:*)",
-      "Bash(./mvnw compile:*)"
+      "Bash(./mvnw compile:*)",
+      "Bash(xargs cat:*)"
     ],
     "deny": [],
     "ask": []

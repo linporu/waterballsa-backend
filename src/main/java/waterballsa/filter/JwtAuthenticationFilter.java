@@ -13,6 +13,7 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 import waterballsa.repository.AccessTokenRepository;
+import waterballsa.repository.UserRepository;
 import waterballsa.util.JwtUtil;
 
 /**
@@ -24,6 +25,7 @@ import waterballsa.util.JwtUtil;
  *   <li>Extracts Bearer token from Authorization header
  *   <li>Validates the token using JwtUtil
  *   <li>Checks if token is blacklisted
+ *   <li>Verifies user exists and is not deleted
  *   <li>Sets authentication in SecurityContext if token is valid
  * </ul>
  */
@@ -36,10 +38,13 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
   private final JwtUtil jwtUtil;
   private final AccessTokenRepository accessTokenRepository;
+  private final UserRepository userRepository;
 
-  public JwtAuthenticationFilter(JwtUtil jwtUtil, AccessTokenRepository accessTokenRepository) {
+  public JwtAuthenticationFilter(
+      JwtUtil jwtUtil, AccessTokenRepository accessTokenRepository, UserRepository userRepository) {
     this.jwtUtil = jwtUtil;
     this.accessTokenRepository = accessTokenRepository;
+    this.userRepository = userRepository;
   }
 
   @Override
@@ -75,6 +80,13 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
       Long userId = jwtUtil.getUserIdFromToken(token);
       String username = jwtUtil.getUsernameFromToken(token);
+
+      // Verify user exists and is not deleted
+      if (!userRepository.findByIdAndDeletedAtIsNull(userId).isPresent()) {
+        logger.debug("User {} not found or has been deleted", userId);
+        filterChain.doFilter(request, response);
+        return;
+      }
 
       // Create authentication object with userId as principal and username as credentials
       UsernamePasswordAuthenticationToken authentication =

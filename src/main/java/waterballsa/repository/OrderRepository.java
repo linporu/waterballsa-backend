@@ -1,6 +1,8 @@
 package waterballsa.repository;
 
 import java.util.Optional;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -49,4 +51,18 @@ public interface OrderRepository extends JpaRepository<Order, Long> {
       @Param("userId") Long userId,
       @Param("status") OrderStatus status,
       @Param("journeyId") Long journeyId);
+
+  /**
+   * Find all orders by user ID with pagination, ordered by creation time descending (newest first).
+   *
+   * @param userId User ID
+   * @param pageable Pagination parameters
+   * @return Page of orders
+   */
+  @Query(
+      "SELECT o FROM Order o "
+          + "WHERE o.userId = :userId "
+          + "AND o.deletedAt IS NULL "
+          + "ORDER BY o.createdAt DESC")
+  Page<Order> findByUserIdOrderByCreatedAtDesc(@Param("userId") Long userId, Pageable pageable);
 }

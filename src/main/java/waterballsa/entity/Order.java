@@ -44,6 +44,9 @@ public class Order {
   @Column(name = "paid_at")
   private LocalDateTime paidAt;
 
+  @Column(name = "expired_at")
+  private LocalDateTime expiredAt;
+
   @Column(name = "updated_at", nullable = false)
   private LocalDateTime updatedAt;
 
@@ -72,6 +75,10 @@ public class Order {
   protected void onCreate() {
     this.createdAt = LocalDateTime.now();
     this.updatedAt = LocalDateTime.now();
+    // Set expiration to 3 days after creation for unpaid orders
+    if (this.status == OrderStatus.UNPAID) {
+      this.expiredAt = this.createdAt.plusDays(3);
+    }
   }
 
   @PreUpdate
@@ -92,6 +99,14 @@ public class Order {
 
   public boolean isPaid() {
     return this.status == OrderStatus.PAID;
+  }
+
+  public void markAsExpired() {
+    this.status = OrderStatus.EXPIRED;
+  }
+
+  public boolean isExpired() {
+    return this.status == OrderStatus.EXPIRED;
   }
 
   public void softDelete() {
@@ -138,6 +153,10 @@ public class Order {
 
   public LocalDateTime getPaidAt() {
     return paidAt;
+  }
+
+  public LocalDateTime getExpiredAt() {
+    return expiredAt;
   }
 
   public LocalDateTime getUpdatedAt() {

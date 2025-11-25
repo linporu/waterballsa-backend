@@ -111,6 +111,12 @@ public class GlobalExceptionHandler {
     return ResponseEntity.status(HttpStatus.CONFLICT).body(new ErrorResponse("訂單已經付款"));
   }
 
+  @ExceptionHandler(OrderExpiredException.class)
+  public ResponseEntity<ErrorResponse> handleOrderExpired(OrderExpiredException ex) {
+    logger.warn("Order expired error: {}", ex.getMessage());
+    return ResponseEntity.status(HttpStatus.CONFLICT).body(new ErrorResponse("訂單已過期"));
+  }
+
   @ExceptionHandler(JourneyAlreadyPurchasedException.class)
   public ResponseEntity<ErrorResponse> handleJourneyAlreadyPurchased(
       JourneyAlreadyPurchasedException ex) {

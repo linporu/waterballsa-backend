@@ -1,5 +1,7 @@
 package waterballsa.repository;
 
+import java.time.LocalDateTime;
+import java.util.List;
 import java.util.Optional;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -65,4 +67,14 @@ public interface OrderRepository extends JpaRepository<Order, Long> {
           + "AND o.deletedAt IS NULL "
           + "ORDER BY o.createdAt DESC")
   Page<Order> findByUserIdOrderByCreatedAtDesc(@Param("userId") Long userId, Pageable pageable);
+
+  /**
+   * Find orders by status where expiration time has passed. Used by scheduled task to expire unpaid
+   * orders after 3 days.
+   *
+   * @param status Order status (typically UNPAID)
+   * @param now Current time
+   * @return List of orders that should be expired
+   */
+  List<Order> findByStatusAndExpiredAtBefore(OrderStatus status, LocalDateTime now);
 }

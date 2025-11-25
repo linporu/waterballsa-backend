@@ -14,7 +14,8 @@ public record OrderResponse(
     BigDecimal price,
     List<OrderItemResponse> items,
     Long createdAt,
-    Long paidAt) {
+    Long paidAt,
+    Long expiredAt) {
 
   public record OrderItemResponse(
       Long journeyId,

@@ -601,9 +601,16 @@ class OrderE2ETest extends BaseE2ETest {
           .then()
           .statusCode(200);
 
-      // TODO: Verify user_journeys record created
-      // For now, we'll verify the order is paid and user has journey access
-      // The userStatus.purchased feature will be implemented in Journey API later
+      // Verify user_journeys record was created in database
+      Integer count =
+          jdbcTemplate.queryForObject(
+              "SELECT COUNT(*) FROM user_journeys WHERE user_id = ? AND journey_id = ? AND order_id = ? AND deleted_at IS NULL",
+              Integer.class,
+              userId,
+              1L, // journeyId=1 from test request
+              orderId);
+
+      assertThat(count, equalTo(1));
     }
 
     @Test
@@ -785,9 +792,31 @@ class OrderE2ETest extends BaseE2ETest {
           .body("status", equalTo("PAID"))
           .body("paidAt", notNullValue());
 
-      // TODO: Step 5: Verify journey access granted
-      // For now, we verify through order status being PAID
-      // The userStatus.purchased feature will be implemented in Journey API later
+      // Step 5: Verify journey access granted via GET /users/{userId}/journeys
+      Response journeyResponse =
+          given()
+              .header("Authorization", bearerToken(userToken))
+              .when()
+              .get("/users/{userId}/journeys", userId)
+              .then()
+              .statusCode(200)
+              .body("journeys", hasSize(greaterThanOrEqualTo(1)))
+              .extract()
+              .response();
+
+      // Verify the purchased journey (journeyId=3) is in the list
+      boolean foundJourney =
+          journeyResponse.jsonPath().getList("journeys.journeyId", Integer.class).contains(3);
+      assertThat(foundJourney, equalTo(true));
+
+      // Verify journey details
+      String actualJourneyTitle =
+          journeyResponse.jsonPath().getString("journeys.find { it.journeyId == 3 }.journeyTitle");
+      String actualOrderNumber =
+          journeyResponse.jsonPath().getString("journeys.find { it.journeyId == 3 }.orderNumber");
+
+      assertThat(actualJourneyTitle, equalTo("AI x BDD：規格驅動全自動開發術"));
+      assertThat(actualOrderNumber, equalTo(orderNumber));
     }
 
     @Test

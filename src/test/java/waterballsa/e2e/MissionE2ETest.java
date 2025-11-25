@@ -3,6 +3,7 @@ package waterballsa.e2e;
 import static io.restassured.RestAssured.given;
 import static org.hamcrest.Matchers.*;
 
+import io.restassured.http.ContentType;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -32,6 +33,42 @@ class MissionE2ETest extends BaseE2ETest {
     String password = "Test1234!";
     registerUser(username, password);
     userToken = loginAndGetToken(username, password);
+  }
+
+  /**
+   * Helper method to purchase a journey by creating and paying an order
+   */
+  private void purchaseJourney(String token, Long journeyId) {
+    String requestBody = String.format(
+        """
+        {
+          "items": [
+            {
+              "journeyId": %d,
+              "quantity": 1
+            }
+          ]
+        }
+        """, journeyId);
+
+    Long orderId = given()
+        .header("Authorization", bearerToken(token))
+        .contentType(ContentType.JSON)
+        .body(requestBody)
+        .when()
+        .post("/orders")
+        .then()
+        .statusCode(201)
+        .extract()
+        .jsonPath()
+        .getLong("id");
+
+    given()
+        .header("Authorization", bearerToken(token))
+        .when()
+        .post("/orders/{orderId}/action/pay", orderId)
+        .then()
+        .statusCode(200);
   }
 
   // ==================== GET /journeys/{journeyId} Tests ====================
@@ -122,11 +159,11 @@ class MissionE2ETest extends BaseE2ETest {
         .body("createdAt", notNullValue())
         .body("videoLength", equalTo("04:16"))
         .body("reward.exp", equalTo(100))
-        .body("content", hasSize(1))
-        .body("content[0].id", equalTo(1))
-        .body("content[0].type", equalTo("video"))
-        .body("content[0].resourceUrl", containsString("c8m1-0.m3u8"))
-        .body("content[0].durationSeconds", equalTo(256));
+        .body("resource", hasSize(1))
+        .body("resource[0].id", equalTo(1))
+        .body("resource[0].type", equalTo("video"))
+        .body("resource[0].resourceUrl", containsString("c8m1-0.m3u8"))
+        .body("resource[0].durationSeconds", equalTo(256));
   }
 
   @Test
@@ -143,6 +180,9 @@ class MissionE2ETest extends BaseE2ETest {
   @Test
   @DisplayName("Should allow authenticated user to access PURCHASED mission")
   void shouldAllowAuthenticatedUserToAccessPurchasedMission() {
+    // Purchase journey 1 first
+    purchaseJourney(userToken, 1L);
+
     given()
         .header("Authorization", bearerToken(userToken))
         .when()
@@ -157,14 +197,17 @@ class MissionE2ETest extends BaseE2ETest {
         .body("description", equalTo("UML 統一塑模語言完整介紹"))
         .body("accessLevel", equalTo("PURCHASED"))
         .body("reward.exp", equalTo(100))
-        .body("content", hasSize(1))
-        .body("content[0].type", equalTo("article"))
-        .body("content[0].resourceUrl", containsString("uml-intro.html"));
+        .body("resource", hasSize(1))
+        .body("resource[0].type", equalTo("article"))
+        .body("resource[0].resourceUrl", containsString("uml-intro.html"));
   }
 
   @Test
   @DisplayName("Should return correct data for video mission")
   void shouldReturnCorrectDataForVideoMission() {
+    // Purchase journey 1 first
+    purchaseJourney(userToken, 1L);
+
     given()
         .header("Authorization", bearerToken(userToken))
         .when()
@@ -174,12 +217,15 @@ class MissionE2ETest extends BaseE2ETest {
         .body("id", equalTo(4))
         .body("type", equalTo("VIDEO"))
         .body("videoLength", equalTo("07:00")) // 420 seconds = 7 minutes
-        .body("content[0].durationSeconds", equalTo(420));
+        .body("resource[0].durationSeconds", equalTo(420));
   }
 
   @Test
   @DisplayName("Should return correct data for questionnaire mission")
   void shouldReturnCorrectDataForQuestionnaireMission() {
+    // Purchase journey 1 first
+    purchaseJourney(userToken, 1L);
+
     given()
         .header("Authorization", bearerToken(userToken))
         .when()
@@ -188,8 +234,8 @@ class MissionE2ETest extends BaseE2ETest {
         .statusCode(200)
         .body("id", equalTo(6))
         .body("type", equalTo("QUESTIONNAIRE"))
-        .body("content[0].type", equalTo("form"))
-        .body("content[0].resourceUrl", containsString("feedback-form"));
+        .body("resource[0].type", equalTo("form"))
+        .body("resource[0].resourceUrl", containsString("feedback-form"));
   }
 
   @Test

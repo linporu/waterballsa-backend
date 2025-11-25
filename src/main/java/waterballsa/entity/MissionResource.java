@@ -6,8 +6,8 @@ import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.type.SqlTypes;
 
 @Entity
-@Table(name = "mission_contents")
-public class MissionContent {
+@Table(name = "mission_resources")
+public class MissionResource {
 
   @Id
   @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -19,11 +19,14 @@ public class MissionContent {
 
   @Enumerated(EnumType.STRING)
   @JdbcTypeCode(SqlTypes.NAMED_ENUM)
-  @Column(name = "content_type", nullable = false, columnDefinition = "content_type")
-  private ContentType contentType;
+  @Column(name = "resource_type", nullable = false, columnDefinition = "resource_type")
+  private ResourceType resourceType;
 
-  @Column(name = "content_url", nullable = false, length = 1000)
-  private String contentUrl;
+  @Column(name = "resource_url", length = 1000)
+  private String resourceUrl;
+
+  @Column(name = "resource_content", columnDefinition = "TEXT")
+  private String resourceContent;
 
   @Column(name = "content_order", nullable = false)
   private Integer contentOrder;
@@ -40,19 +43,21 @@ public class MissionContent {
   @Column(name = "deleted_at")
   private LocalDateTime deletedAt;
 
-  protected MissionContent() {
+  protected MissionResource() {
     // JPA requires a no-arg constructor
   }
 
-  public MissionContent(
+  public MissionResource(
       Mission mission,
-      ContentType contentType,
-      String contentUrl,
+      ResourceType resourceType,
+      String resourceUrl,
+      String resourceContent,
       Integer contentOrder,
       Integer durationSeconds) {
     this.mission = mission;
-    this.contentType = contentType;
-    this.contentUrl = contentUrl;
+    this.resourceType = resourceType;
+    this.resourceUrl = resourceUrl;
+    this.resourceContent = resourceContent;
     this.contentOrder = contentOrder;
     this.durationSeconds = durationSeconds;
   }
@@ -85,12 +90,16 @@ public class MissionContent {
     return mission;
   }
 
-  public ContentType getContentType() {
-    return contentType;
+  public ResourceType getResourceType() {
+    return resourceType;
   }
 
-  public String getContentUrl() {
-    return contentUrl;
+  public String getResourceUrl() {
+    return resourceUrl;
+  }
+
+  public String getResourceContent() {
+    return resourceContent;
   }
 
   public Integer getContentOrder() {

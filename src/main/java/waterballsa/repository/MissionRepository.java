@@ -11,7 +11,7 @@ import waterballsa.entity.Mission;
 public interface MissionRepository extends JpaRepository<Mission, Long> {
 
   /**
-   * Find mission by ID with chapter, journey and contents eagerly loaded.
+   * Find mission by ID with chapter, journey and resources eagerly loaded.
    *
    * @param id Mission ID
    * @return Optional of Mission
@@ -20,7 +20,7 @@ public interface MissionRepository extends JpaRepository<Mission, Long> {
       "SELECT DISTINCT m FROM Mission m "
           + "LEFT JOIN FETCH m.chapter c "
           + "LEFT JOIN FETCH c.journey j "
-          + "LEFT JOIN FETCH m.contents mc "
+          + "LEFT JOIN FETCH m.resources mc "
           + "WHERE m.id = :id AND m.deletedAt IS NULL "
           + "AND c.deletedAt IS NULL "
           + "AND j.deletedAt IS NULL "

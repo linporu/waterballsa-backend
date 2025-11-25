@@ -8,12 +8,12 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import waterballsa.dto.MissionContentDTO;
+import waterballsa.dto.MissionResourceDTO;
 import waterballsa.dto.MissionDetailResponse;
 import waterballsa.dto.MissionRewardDTO;
 import waterballsa.entity.Mission;
 import waterballsa.entity.MissionAccessLevel;
-import waterballsa.entity.MissionContent;
+import waterballsa.entity.MissionResource;
 import waterballsa.exception.ForbiddenException;
 import waterballsa.exception.MissionNotFoundException;
 import waterballsa.repository.MissionRepository;
@@ -114,11 +114,11 @@ public class MissionService {
     Long createdAtMillis =
         mission.getCreatedAt().atZone(ZoneId.systemDefault()).toInstant().toEpochMilli();
 
-    List<MissionContentDTO> contents =
-        mission.getContents().stream()
-            .filter(content -> !content.isDeleted())
-            .sorted(Comparator.comparing(MissionContent::getContentOrder))
-            .map(this::mapToMissionContentDTO)
+    List<MissionResourceDTO> contents =
+        mission.getResources().stream()
+            .filter(resource -> !resource.isDeleted())
+            .sorted(Comparator.comparing(MissionResource::getContentOrder))
+            .map(this::mapToMissionResourceDTO)
             .collect(Collectors.toList());
 
     // Calculate video length from first video content
@@ -140,20 +140,21 @@ public class MissionService {
         contents);
   }
 
-  private MissionContentDTO mapToMissionContentDTO(MissionContent content) {
-    return new MissionContentDTO(
-        content.getId(),
-        content.getContentType().name().toLowerCase(),
-        content.getContentUrl(),
-        content.getDurationSeconds());
+  private MissionResourceDTO mapToMissionResourceDTO(MissionResource resource) {
+    return new MissionResourceDTO(
+        resource.getId(),
+        resource.getResourceType().name().toLowerCase(),
+        resource.getResourceUrl(),
+        resource.getResourceContent(),
+        resource.getDurationSeconds());
   }
 
-  private String calculateVideoLength(List<MissionContentDTO> contents) {
+  private String calculateVideoLength(List<MissionResourceDTO> contents) {
     // Find first video content with duration
     Integer totalSeconds =
         contents.stream()
             .filter(c -> "video".equals(c.type()) && c.durationSeconds() != null)
-            .map(MissionContentDTO::durationSeconds)
+            .map(MissionResourceDTO::durationSeconds)
             .findFirst()
             .orElse(null);
 

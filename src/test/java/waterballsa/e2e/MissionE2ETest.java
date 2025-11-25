@@ -125,7 +125,7 @@ class MissionE2ETest extends BaseE2ETest {
         .body("content", hasSize(1))
         .body("content[0].id", equalTo(1))
         .body("content[0].type", equalTo("video"))
-        .body("content[0].url", containsString("c8m1-0.m3u8"))
+        .body("content[0].resourceUrl", containsString("c8m1-0.m3u8"))
         .body("content[0].durationSeconds", equalTo(256));
   }
 
@@ -159,7 +159,7 @@ class MissionE2ETest extends BaseE2ETest {
         .body("reward.exp", equalTo(100))
         .body("content", hasSize(1))
         .body("content[0].type", equalTo("article"))
-        .body("content[0].url", containsString("uml-intro.html"));
+        .body("content[0].resourceUrl", containsString("uml-intro.html"));
   }
 
   @Test
@@ -189,7 +189,7 @@ class MissionE2ETest extends BaseE2ETest {
         .body("id", equalTo(6))
         .body("type", equalTo("QUESTIONNAIRE"))
         .body("content[0].type", equalTo("form"))
-        .body("content[0].url", containsString("feedback-form"));
+        .body("content[0].resourceUrl", containsString("feedback-form"));
   }
 
   @Test

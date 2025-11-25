@@ -9,7 +9,7 @@ import org.springframework.transaction.annotation.Transactional;
 import waterballsa.dto.DeliverResponse;
 import waterballsa.dto.UserMissionProgressResponse;
 import waterballsa.entity.Mission;
-import waterballsa.entity.MissionContent;
+import waterballsa.entity.MissionResource;
 import waterballsa.entity.MissionType;
 import waterballsa.entity.ProgressStatus;
 import waterballsa.entity.User;
@@ -181,11 +181,11 @@ public class ProgressService {
   }
 
   private Integer getVideoDuration(Mission mission) {
-    return mission.getContents().stream()
-        .filter(content -> !content.isDeleted())
-        .sorted(Comparator.comparing(MissionContent::getContentOrder))
-        .filter(content -> content.getDurationSeconds() != null)
-        .map(MissionContent::getDurationSeconds)
+    return mission.getResources().stream()
+        .filter(resource -> !resource.isDeleted())
+        .sorted(Comparator.comparing(MissionResource::getContentOrder))
+        .filter(resource -> resource.getDurationSeconds() != null)
+        .map(MissionResource::getDurationSeconds)
         .findFirst()
         .orElse(null);
   }

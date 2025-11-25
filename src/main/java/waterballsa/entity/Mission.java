@@ -48,7 +48,7 @@ public class Mission {
   private LocalDateTime deletedAt;
 
   @OneToMany(mappedBy = "mission", fetch = FetchType.LAZY)
-  private List<MissionContent> contents = new ArrayList<>();
+  private List<MissionResource> resources = new ArrayList<>();
 
   protected Mission() {
     // JPA requires a no-arg constructor
@@ -133,7 +133,7 @@ public class Mission {
     return deletedAt;
   }
 
-  public List<MissionContent> getContents() {
-    return contents;
+  public List<MissionResource> getResources() {
+    return resources;
   }
 }

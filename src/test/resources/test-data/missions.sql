@@ -41,8 +41,8 @@ VALUES
     -- Deleted mission
     (999, 1, 'Deleted Mission', 'VIDEO', 'This should not appear', 'PUBLIC', 999, NOW(), NOW(), NOW());
 
--- Insert test mission contents
-INSERT INTO mission_contents (id, mission_id, content_type, content_url, content_order, duration_seconds, created_at, updated_at, deleted_at)
+-- Insert test mission resources
+INSERT INTO mission_resources (id, mission_id, resource_type, resource_url, content_order, duration_seconds, created_at, updated_at, deleted_at)
 VALUES
     -- Mission 1 content (VIDEO)
     (1, 1, 'VIDEO', 'https://cdn.waterballsa.tw/software-design-pattern/videos/c8m1-0/c8m1-0.m3u8', 1, 256, NOW(), NOW(), NULL),

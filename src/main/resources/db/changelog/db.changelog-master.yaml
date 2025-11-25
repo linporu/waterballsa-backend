@@ -62,3 +62,6 @@ databaseChangeLog:
   - include:
       file: db/changelog/migrations/020-add-order-expired-status.sql
       relativeToChangelogFile: false
+  - include:
+      file: db/changelog/migrations/021-rename-mission-contents-to-resources.sql
+      relativeToChangelogFile: false

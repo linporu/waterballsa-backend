@@ -1,11 +1,13 @@
 package waterballsa.service;
 
 import java.math.BigDecimal;
+import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.util.List;
 import java.util.stream.Collectors;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import waterballsa.dto.CreateOrderRequest;
@@ -158,6 +160,7 @@ public class OrderService {
    * @return PayOrderResponse
    * @throws OrderNotFoundException if order not found or user doesn't own the order
    * @throws OrderAlreadyPaidException if order already paid
+   * @throws OrderExpiredException if order has expired
    */
   @Transactional
   public PayOrderResponse payOrder(Long orderId, Long userId) {
@@ -173,6 +176,12 @@ public class OrderService {
     if (order.isPaid()) {
       logger.warn("Order {} is already paid", orderId);
       throw new OrderAlreadyPaidException(orderId);
+    }
+
+    // Check if order has expired
+    if (order.isExpired()) {
+      logger.warn("Order {} has expired", orderId);
+      throw new OrderExpiredException(orderId);
     }
 
     // Mark order as paid
@@ -212,6 +221,10 @@ public class OrderService {
         order.getPaidAt() != null
             ? order.getPaidAt().atZone(ZoneId.systemDefault()).toInstant().toEpochMilli()
             : null;
+    Long expiredAtMillis =
+        order.getExpiredAt() != null
+            ? order.getExpiredAt().atZone(ZoneId.systemDefault()).toInstant().toEpochMilli()
+            : null;
 
     // Map order items
     List<OrderResponse.OrderItemResponse> items =
@@ -246,6 +259,28 @@ public class OrderService {
         order.getPrice(),
         items,
         createdAtMillis,
-        paidAtMillis);
+        paidAtMillis,
+        expiredAtMillis);
+  }
+
+  /** Scheduled task to expire unpaid orders after 3 days. Runs every 10 minutes. */
+  @Scheduled(cron = "0 */10 * * * *")
+  @Transactional
+  public void expireOrders() {
+    LocalDateTime now = LocalDateTime.now();
+    List<Order> expiredOrders =
+        orderRepository.findByStatusAndExpiredAtBefore(OrderStatus.UNPAID, now);
+
+    if (!expiredOrders.isEmpty()) {
+      logger.info("Found {} orders to expire", expiredOrders.size());
+
+      for (Order order : expiredOrders) {
+        order.markAsExpired();
+        orderRepository.save(order);
+        logger.info("Expired order {}", order.getId());
+      }
+
+      logger.info("Successfully expired {} orders", expiredOrders.size());
+    }
   }
 }

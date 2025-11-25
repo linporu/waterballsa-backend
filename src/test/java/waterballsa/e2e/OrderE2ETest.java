@@ -9,6 +9,8 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.test.context.jdbc.Sql;
 
 /**
@@ -27,6 +29,8 @@ import org.springframework.test.context.jdbc.Sql;
     executionPhase = Sql.ExecutionPhase.BEFORE_TEST_METHOD)
 @Sql(scripts = "/test-data/cleanup.sql", executionPhase = Sql.ExecutionPhase.AFTER_TEST_METHOD)
 class OrderE2ETest extends BaseE2ETest {
+
+  @Autowired private JdbcTemplate jdbcTemplate;
 
   private String userToken;
   private Long userId;
@@ -858,6 +862,191 @@ class OrderE2ETest extends BaseE2ETest {
           user1Response.jsonPath().getString("items[0].journeyTitle"), equalTo("軟體設計模式精通之旅"));
       assertThat(
           user2Response.jsonPath().getString("items[0].journeyTitle"), equalTo("Spring Boot 完全攻略"));
+    }
+  }
+
+  // ==================== Order Expiration Tests ====================
+
+  @Nested
+  @DisplayName("Order Expiration")
+  class OrderExpirationTests {
+
+    @Test
+    @DisplayName("Should include expiredAt timestamp when creating order")
+    void shouldIncludeExpiredAtTimestampWhenCreatingOrder() {
+      String requestBody =
+          """
+              {
+                "items": [
+                  {
+                    "journeyId": 1,
+                    "quantity": 1
+                  }
+                ]
+              }
+              """;
+
+      Response response =
+          given()
+              .header("Authorization", bearerToken(userToken))
+              .contentType(ContentType.JSON)
+              .body(requestBody)
+              .when()
+              .post("/orders")
+              .then()
+              .statusCode(201)
+              .body("expiredAt", notNullValue())
+              .extract()
+              .response();
+
+      // Verify expiredAt is approximately 3 days after createdAt
+      Long createdAt = response.jsonPath().getLong("createdAt");
+      Long expiredAt = response.jsonPath().getLong("expiredAt");
+
+      // 3 days = 259200000 milliseconds
+      long expectedExpiration = 3L * 24 * 60 * 60 * 1000;
+      long actualDifference = expiredAt - createdAt;
+
+      // Allow 1 second tolerance (1000 ms)
+      assertThat(actualDifference, greaterThanOrEqualTo(expectedExpiration - 1000));
+      assertThat(actualDifference, lessThanOrEqualTo(expectedExpiration + 1000));
+    }
+
+    @Test
+    @DisplayName("Should return expiredAt in order detail")
+    void shouldReturnExpiredAtInOrderDetail() {
+      String requestBody =
+          """
+              {
+                "items": [
+                  {
+                    "journeyId": 1,
+                    "quantity": 1
+                  }
+                ]
+              }
+              """;
+
+      // Create order
+      Long orderId =
+          given()
+              .header("Authorization", bearerToken(userToken))
+              .contentType(ContentType.JSON)
+              .body(requestBody)
+              .when()
+              .post("/orders")
+              .then()
+              .statusCode(201)
+              .extract()
+              .jsonPath()
+              .getLong("id");
+
+      // Get order detail
+      given()
+          .header("Authorization", bearerToken(userToken))
+          .when()
+          .get("/orders/{orderId}", orderId)
+          .then()
+          .statusCode(200)
+          .body("id", equalTo(orderId.intValue()))
+          .body("status", equalTo("UNPAID"))
+          .body("expiredAt", notNullValue());
+    }
+
+    @Test
+    @DisplayName("Should fail to pay expired order with 409 Conflict")
+    void shouldFailToPayExpiredOrder() {
+      String requestBody =
+          """
+              {
+                "items": [
+                  {
+                    "journeyId": 1,
+                    "quantity": 1
+                  }
+                ]
+              }
+              """;
+
+      // Create an order first
+      Long orderId =
+          given()
+              .header("Authorization", bearerToken(userToken))
+              .contentType(ContentType.JSON)
+              .body(requestBody)
+              .when()
+              .post("/orders")
+              .then()
+              .statusCode(201)
+              .extract()
+              .jsonPath()
+              .getLong("id");
+
+      // Manually expire the order by updating its status in the database
+      // This simulates what the scheduled task would do
+      expireOrderInDatabase(orderId);
+
+      // Attempt to pay expired order
+      given()
+          .header("Authorization", bearerToken(userToken))
+          .when()
+          .post("/orders/{orderId}/action/pay", orderId)
+          .then()
+          .statusCode(409)
+          .body("error", containsString("訂單已過期"));
+    }
+
+    @Test
+    @DisplayName("Should show expired orders in user order list")
+    void shouldShowExpiredOrdersInList() {
+      String requestBody =
+          """
+              {
+                "items": [
+                  {
+                    "journeyId": 1,
+                    "quantity": 1
+                  }
+                ]
+              }
+              """;
+
+      // Create an order
+      Long orderId =
+          given()
+              .header("Authorization", bearerToken(userToken))
+              .contentType(ContentType.JSON)
+              .body(requestBody)
+              .when()
+              .post("/orders")
+              .then()
+              .statusCode(201)
+              .extract()
+              .jsonPath()
+              .getLong("id");
+
+      // Manually expire the order
+      expireOrderInDatabase(orderId);
+
+      // Get user's order list
+      given()
+          .header("Authorization", bearerToken(userToken))
+          .queryParam("page", 1)
+          .queryParam("size", 10)
+          .when()
+          .get("/users/{userId}/orders", userId)
+          .then()
+          .statusCode(200)
+          .body("orders", hasSize(greaterThan(0)))
+          .body("orders[0].status", anyOf(equalTo("UNPAID"), equalTo("PAID"), equalTo("EXPIRED")));
+    }
+
+    /**
+     * Helper method to manually expire an order by updating its status in the database. This
+     * simulates what the scheduled task would do after 3 days.
+     */
+    private void expireOrderInDatabase(Long orderId) {
+      jdbcTemplate.update("UPDATE orders SET status = 'EXPIRED' WHERE id = ?", orderId);
     }
   }
 

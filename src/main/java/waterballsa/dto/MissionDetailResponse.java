@@ -13,4 +13,4 @@ public record MissionDetailResponse(
     Long createdAt,
     String videoLength,
     MissionRewardDTO reward,
-    List<MissionResourceDTO> content) {}
+    List<MissionResourceDTO> resource) {}

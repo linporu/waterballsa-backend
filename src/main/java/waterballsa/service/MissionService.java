@@ -8,8 +8,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import waterballsa.dto.MissionResourceDTO;
 import waterballsa.dto.MissionDetailResponse;
+import waterballsa.dto.MissionResourceDTO;
 import waterballsa.dto.MissionRewardDTO;
 import waterballsa.entity.Mission;
 import waterballsa.entity.MissionAccessLevel;
@@ -17,6 +17,7 @@ import waterballsa.entity.MissionResource;
 import waterballsa.exception.ForbiddenException;
 import waterballsa.exception.MissionNotFoundException;
 import waterballsa.repository.MissionRepository;
+import waterballsa.repository.UserJourneyRepository;
 import waterballsa.util.AuthenticationValidator;
 
 @Service
@@ -26,9 +27,12 @@ public class MissionService {
   private static final Integer DEFAULT_EXPERIENCE_REWARD = 100;
 
   private final MissionRepository missionRepository;
+  private final UserJourneyRepository userJourneyRepository;
 
-  public MissionService(MissionRepository missionRepository) {
+  public MissionService(
+      MissionRepository missionRepository, UserJourneyRepository userJourneyRepository) {
     this.missionRepository = missionRepository;
+    this.userJourneyRepository = userJourneyRepository;
   }
 
   /**
@@ -92,18 +96,12 @@ public class MissionService {
     }
 
     // PURCHASED missions require journey purchase
-    // For MVP: All authenticated users are considered to have purchased
-    // TODO: Implement actual purchase check when payment system is ready
     if (accessLevel == MissionAccessLevel.PURCHASED) {
-      // Uncomment when purchase system is implemented:
-      // Long journeyId = mission.getChapter().getJourney().getId();
-      // boolean hasPurchased = userJourneyPurchaseRepository.existsByUserIdAndJourneyId(userId,
-      // journeyId);
-      // if (!hasPurchased) {
-      //   throw new ForbiddenException("You need to purchase this journey to access this mission");
-      // }
-
-      // For now, all authenticated users can access PURCHASED missions
+      Long journeyId = mission.getChapter().getJourney().getId();
+      boolean hasPurchased = userJourneyRepository.existsByUserIdAndJourneyId(userId, journeyId);
+      if (!hasPurchased) {
+        throw new ForbiddenException("You need to purchase this journey to access this mission");
+      }
       return;
     }
   }
@@ -114,7 +112,7 @@ public class MissionService {
     Long createdAtMillis =
         mission.getCreatedAt().atZone(ZoneId.systemDefault()).toInstant().toEpochMilli();
 
-    List<MissionResourceDTO> contents =
+    List<MissionResourceDTO> resources =
         mission.getResources().stream()
             .filter(resource -> !resource.isDeleted())
             .sorted(Comparator.comparing(MissionResource::getContentOrder))
@@ -122,7 +120,7 @@ public class MissionService {
             .collect(Collectors.toList());
 
     // Calculate video length from first video content
-    String videoLength = calculateVideoLength(contents);
+    String videoLength = calculateVideoLength(resources);
 
     MissionRewardDTO reward = new MissionRewardDTO(DEFAULT_EXPERIENCE_REWARD);
 
@@ -137,7 +135,7 @@ public class MissionService {
         createdAtMillis,
         videoLength,
         reward,
-        contents);
+        resources);
   }
 
   private MissionResourceDTO mapToMissionResourceDTO(MissionResource resource) {

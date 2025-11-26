@@ -2,6 +2,7 @@ package waterballsa.service;
 
 import java.util.Comparator;
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -12,11 +13,16 @@ import waterballsa.dto.JourneyDetailResponse;
 import waterballsa.dto.JourneyListItemDTO;
 import waterballsa.dto.JourneyListResponse;
 import waterballsa.dto.MissionSummaryDTO;
+import waterballsa.dto.UserStatusDTO;
 import waterballsa.entity.Chapter;
 import waterballsa.entity.Journey;
 import waterballsa.entity.Mission;
+import waterballsa.entity.Order;
+import waterballsa.entity.OrderStatus;
 import waterballsa.exception.JourneyNotFoundException;
 import waterballsa.repository.JourneyRepository;
+import waterballsa.repository.OrderRepository;
+import waterballsa.repository.UserJourneyRepository;
 
 @Service
 public class JourneyService {
@@ -24,9 +30,16 @@ public class JourneyService {
   private static final Logger logger = LoggerFactory.getLogger(JourneyService.class);
 
   private final JourneyRepository journeyRepository;
+  private final UserJourneyRepository userJourneyRepository;
+  private final OrderRepository orderRepository;
 
-  public JourneyService(JourneyRepository journeyRepository) {
+  public JourneyService(
+      JourneyRepository journeyRepository,
+      UserJourneyRepository userJourneyRepository,
+      OrderRepository orderRepository) {
     this.journeyRepository = journeyRepository;
+    this.userJourneyRepository = userJourneyRepository;
+    this.orderRepository = orderRepository;
   }
 
   /**
@@ -52,11 +65,12 @@ public class JourneyService {
    * Get journey details with chapters and missions.
    *
    * @param journeyId Journey ID
+   * @param userId Optional user ID for authenticated users
    * @return JourneyDetailResponse
    * @throws JourneyNotFoundException if journey not found or deleted
    */
   @Transactional(readOnly = true)
-  public JourneyDetailResponse getJourneyDetail(Long journeyId) {
+  public JourneyDetailResponse getJourneyDetail(Long journeyId, Optional<Long> userId) {
     logger.debug("Fetching journey details for journeyId: {}", journeyId);
 
     Journey journey =
@@ -69,10 +83,13 @@ public class JourneyService {
         journeyId,
         journey.getChapters().size());
 
-    return mapToJourneyDetailResponse(journey);
+    UserStatusDTO userStatus = userId.map(uid -> calculateUserStatus(uid, journeyId)).orElse(null);
+
+    return mapToJourneyDetailResponse(journey, userStatus);
   }
 
-  private JourneyDetailResponse mapToJourneyDetailResponse(Journey journey) {
+  private JourneyDetailResponse mapToJourneyDetailResponse(
+      Journey journey, UserStatusDTO userStatus) {
     List<ChapterDTO> chapters =
         journey.getChapters().stream()
             .filter(chapter -> !chapter.isDeleted())
@@ -87,7 +104,28 @@ public class JourneyService {
         journey.getDescription(),
         journey.getCoverImageUrl(),
         journey.getTeacherName(),
+        userStatus,
         chapters);
+  }
+
+  private UserStatusDTO calculateUserStatus(Long userId, Long journeyId) {
+    logger.debug("Calculating user status for userId: {} and journeyId: {}", userId, journeyId);
+
+    boolean hasPurchased = userJourneyRepository.existsByUserIdAndJourneyId(userId, journeyId);
+
+    Optional<Order> unpaidOrder =
+        orderRepository.findByUserIdAndStatusAndJourneyId(userId, OrderStatus.UNPAID, journeyId);
+
+    boolean hasUnpaidOrder = unpaidOrder.isPresent();
+    Long unpaidOrderId = unpaidOrder.map(Order::getId).orElse(null);
+
+    logger.debug(
+        "User status calculated - hasPurchased: {}, hasUnpaidOrder: {}, unpaidOrderId: {}",
+        hasPurchased,
+        hasUnpaidOrder,
+        unpaidOrderId);
+
+    return new UserStatusDTO(hasPurchased, hasUnpaidOrder, unpaidOrderId);
   }
 
   private ChapterDTO mapToChapterDTO(Chapter chapter) {

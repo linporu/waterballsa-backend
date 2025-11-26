@@ -9,4 +9,5 @@ public record JourneyDetailResponse(
     String description,
     String coverImageUrl,
     String teacherName,
+    UserStatusDTO userStatus,
     List<ChapterDTO> chapters) {}

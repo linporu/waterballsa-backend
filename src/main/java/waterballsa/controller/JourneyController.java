@@ -1,11 +1,8 @@
 package waterballsa.controller;
 
-import java.util.Optional;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.core.Authentication;
-import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -52,19 +49,10 @@ public class JourneyController {
   public ResponseEntity<JourneyDetailResponse> getJourneyDetail(@PathVariable Long journeyId) {
     logger.debug("GET /journeys/{} request received", journeyId);
 
-    Optional<Long> userId = getOptionalUserId();
-    JourneyDetailResponse response = journeyService.getJourneyDetail(journeyId, userId);
+    JourneyDetailResponse response = journeyService.getJourneyDetail(journeyId);
 
     logger.info("Successfully returned journey details for journeyId: {}", journeyId);
 
     return ResponseEntity.ok(response);
-  }
-
-  private Optional<Long> getOptionalUserId() {
-    Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-    if (authentication != null && authentication.getPrincipal() instanceof Long) {
-      return Optional.of((Long) authentication.getPrincipal());
-    }
-    return Optional.empty();
   }
 }

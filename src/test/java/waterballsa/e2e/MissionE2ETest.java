@@ -35,11 +35,12 @@ class MissionE2ETest extends BaseE2ETest {
     userToken = loginAndGetToken(username, password);
   }
 
-  /** Helper method to purchase a journey by creating and paying an order */
+  /**
+   * Helper method to purchase a journey by creating and paying an order
+   */
   private void purchaseJourney(String token, Long journeyId) {
-    String requestBody =
-        String.format(
-            """
+    String requestBody = String.format(
+        """
         {
           "items": [
             {
@@ -48,21 +49,19 @@ class MissionE2ETest extends BaseE2ETest {
             }
           ]
         }
-        """,
-            journeyId);
+        """, journeyId);
 
-    Long orderId =
-        given()
-            .header("Authorization", bearerToken(token))
-            .contentType(ContentType.JSON)
-            .body(requestBody)
-            .when()
-            .post("/orders")
-            .then()
-            .statusCode(201)
-            .extract()
-            .jsonPath()
-            .getLong("id");
+    Long orderId = given()
+        .header("Authorization", bearerToken(token))
+        .contentType(ContentType.JSON)
+        .body(requestBody)
+        .when()
+        .post("/orders")
+        .then()
+        .statusCode(201)
+        .extract()
+        .jsonPath()
+        .getLong("id");
 
     given()
         .header("Authorization", bearerToken(token))

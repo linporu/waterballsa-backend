@@ -151,10 +151,10 @@ public class OrderService {
   public PayOrderResponse payOrder(Long orderId, Long userId) {
     logger.debug("Processing payment for order {} by user {}", orderId, userId);
 
-    // Fetch order and verify ownership
+    // Fetch order with pessimistic lock and verify ownership
     Order order =
         orderRepository
-            .findByIdAndUserId(orderId, userId)
+            .findByIdAndUserIdForUpdate(orderId, userId)
             .orElseThrow(() -> new OrderNotFoundException(orderId));
 
     orderValidator.validateOrderNotPaid(order);

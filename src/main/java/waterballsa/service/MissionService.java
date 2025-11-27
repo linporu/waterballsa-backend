@@ -28,8 +28,7 @@ public class MissionService {
   private final MissionRepository missionRepository;
 
   public MissionService(
-      MissionAccessValidator missionAccessValidator,
-      MissionRepository missionRepository) {
+      MissionAccessValidator missionAccessValidator, MissionRepository missionRepository) {
     this.missionAccessValidator = missionAccessValidator;
     this.missionRepository = missionRepository;
   }

@@ -1,11 +1,13 @@
 package waterballsa.repository;
 
+import jakarta.persistence.LockModeType;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Lock;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
@@ -77,4 +79,18 @@ public interface OrderRepository extends JpaRepository<Order, Long> {
    * @return List of orders that should be expired
    */
   List<Order> findByStatusAndExpiredAtBefore(OrderStatus status, LocalDateTime now);
+
+  /**
+   * Find order by ID and user ID with pessimistic write lock for payment processing.
+   *
+   * <p>This prevents concurrent payment attempts on the same order by acquiring a database-level
+   * write lock.
+   *
+   * @param id Order ID
+   * @param userId User ID
+   * @return Optional of Order
+   */
+  @Lock(LockModeType.PESSIMISTIC_WRITE)
+  @Query("SELECT o FROM Order o WHERE o.id = :id AND o.userId = :userId AND o.deletedAt IS NULL")
+  Optional<Order> findByIdAndUserIdForUpdate(@Param("id") Long id, @Param("userId") Long userId);
 }

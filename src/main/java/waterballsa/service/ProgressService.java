@@ -10,21 +10,13 @@ import waterballsa.dto.DeliverResponse;
 import waterballsa.dto.UserMissionProgressResponse;
 import waterballsa.entity.Mission;
 import waterballsa.entity.MissionResource;
-import waterballsa.entity.MissionType;
 import waterballsa.entity.ProgressStatus;
 import waterballsa.entity.User;
 import waterballsa.entity.UserMissionProgress;
-import waterballsa.exception.InvalidWatchPositionException;
-import waterballsa.exception.MissionAlreadyDeliveredException;
-import waterballsa.exception.MissionNotCompletedException;
-import waterballsa.exception.MissionNotFoundException;
-import waterballsa.exception.ProgressAccessDeniedException;
 import waterballsa.exception.UnauthorizedException;
-import waterballsa.exception.UnsupportedMissionTypeException;
-import waterballsa.repository.MissionRepository;
 import waterballsa.repository.UserMissionProgressRepository;
 import waterballsa.repository.UserRepository;
-import waterballsa.util.AuthenticationValidator;
+import waterballsa.validator.ProgressValidator;
 
 @Service
 public class ProgressService {
@@ -32,16 +24,16 @@ public class ProgressService {
   private static final Logger logger = LoggerFactory.getLogger(ProgressService.class);
   private static final Integer DEFAULT_EXPERIENCE_REWARD = 100;
 
+  private final ProgressValidator progressValidator;
   private final UserMissionProgressRepository progressRepository;
-  private final MissionRepository missionRepository;
   private final UserRepository userRepository;
 
   public ProgressService(
+      ProgressValidator progressValidator,
       UserMissionProgressRepository progressRepository,
-      MissionRepository missionRepository,
       UserRepository userRepository) {
+    this.progressValidator = progressValidator;
     this.progressRepository = progressRepository;
-    this.missionRepository = missionRepository;
     this.userRepository = userRepository;
   }
 
@@ -62,9 +54,8 @@ public class ProgressService {
         missionId,
         currentUserId);
 
-    validateAuthentication(currentUserId);
-    validateUserAccess(pathUserId, currentUserId);
-    validateMissionExists(missionId);
+    progressValidator.validateProgressAccess(pathUserId, currentUserId);
+    progressValidator.validateMissionExists(missionId);
 
     UserMissionProgress progress =
         progressRepository
@@ -99,12 +90,11 @@ public class ProgressService {
         watchPositionSeconds,
         currentUserId);
 
-    validateAuthentication(currentUserId);
-    validateUserAccess(pathUserId, currentUserId);
-    validateWatchPosition(watchPositionSeconds);
+    progressValidator.validateProgressAccess(pathUserId, currentUserId);
+    progressValidator.validateWatchPosition(watchPositionSeconds);
 
-    Mission mission = validateMissionExistsAndReturn(missionId);
-    validateMissionTypeSupportsProgress(mission);
+    Mission mission = progressValidator.validateAndGetMission(missionId);
+    progressValidator.validateMissionTypeSupportsProgress(mission);
 
     Integer videoDuration = getVideoDuration(mission);
     Integer cappedPosition = capWatchPosition(watchPositionSeconds, videoDuration);
@@ -141,44 +131,49 @@ public class ProgressService {
     return mapToResponse(progress);
   }
 
-  private void validateAuthentication(Long currentUserId) {
-    AuthenticationValidator.validateUserAuthenticated(currentUserId);
+  /**
+   * Deliver a mission to receive experience points.
+   *
+   * @param pathUserId User ID from path parameter
+   * @param missionId Mission ID
+   * @param currentUserId Current authenticated user ID
+   * @return DeliverResponse with experience gained and user stats
+   */
+  @Transactional
+  public DeliverResponse deliverMission(
+      @NonNull Long pathUserId, Long missionId, Long currentUserId) {
+    logger.debug(
+        "Delivering mission for user: {}, mission: {}, currentUser: {}",
+        pathUserId,
+        missionId,
+        currentUserId);
+
+    progressValidator.validateProgressAccess(pathUserId, currentUserId);
+
+    Mission mission = progressValidator.validateAndGetMission(missionId);
+    User user = findUserOrThrow(pathUserId);
+    UserMissionProgress progress = findProgress(pathUserId, missionId);
+
+    progressValidator.validateNotAlreadyDelivered(progress);
+    progressValidator.validateVideoMissionCompleted(mission, progress);
+
+    progress = getOrCreateProgress(user, mission, progress);
+    progress.markAsDelivered();
+    progressRepository.save(progress);
+
+    Integer experienceGained = grantExperienceReward(user);
+
+    logger.info(
+        "Successfully delivered mission for user: {}, mission: {}, XP gained: {}",
+        pathUserId,
+        missionId,
+        experienceGained);
+
+    return new DeliverResponse(
+        "任務交付成功", experienceGained, user.getExperiencePoints(), user.getLevel());
   }
 
-  private void validateUserAccess(Long pathUserId, Long currentUserId) {
-    if (!pathUserId.equals(currentUserId)) {
-      logger.warn("User {} attempted to access progress of user {}", currentUserId, pathUserId);
-      throw new ProgressAccessDeniedException("Cannot access progress for other users");
-    }
-  }
-
-  private void validateMissionExists(Long missionId) {
-    missionRepository
-        .findByIdAndDeletedAtIsNull(missionId)
-        .orElseThrow(() -> new MissionNotFoundException(missionId));
-  }
-
-  private Mission validateMissionExistsAndReturn(Long missionId) {
-    return missionRepository
-        .findByIdWithDetails(missionId)
-        .orElseThrow(() -> new MissionNotFoundException(missionId));
-  }
-
-  private void validateMissionTypeSupportsProgress(Mission mission) {
-    if (mission.getType() != MissionType.VIDEO) {
-      logger.warn(
-          "Attempted to update progress for non-VIDEO mission: {}, type: {}",
-          mission.getId(),
-          mission.getType());
-      throw new UnsupportedMissionTypeException("Mission type does not support progress tracking");
-    }
-  }
-
-  private void validateWatchPosition(Integer watchPositionSeconds) {
-    if (watchPositionSeconds == null || watchPositionSeconds < 0) {
-      throw new InvalidWatchPositionException("Watch position cannot be negative");
-    }
-  }
+  // ==================== Helper Methods ====================
 
   private Integer getVideoDuration(Mission mission) {
     return mission.getResources().stream()
@@ -204,49 +199,6 @@ public class ProgressService {
         progress.getWatchPositionSeconds());
   }
 
-  /**
-   * Deliver a mission to receive experience points.
-   *
-   * @param pathUserId User ID from path parameter
-   * @param missionId Mission ID
-   * @param currentUserId Current authenticated user ID
-   * @return DeliverResponse with experience gained and user stats
-   */
-  @Transactional
-  public DeliverResponse deliverMission(
-      @NonNull Long pathUserId, Long missionId, Long currentUserId) {
-    logger.debug(
-        "Delivering mission for user: {}, mission: {}, currentUser: {}",
-        pathUserId,
-        missionId,
-        currentUserId);
-
-    validateAuthentication(currentUserId);
-    validateUserAccess(pathUserId, currentUserId);
-
-    Mission mission = validateMissionExistsAndReturn(missionId);
-    User user = findUserOrThrow(pathUserId);
-    UserMissionProgress progress = findProgress(pathUserId, missionId);
-
-    validateNotAlreadyDelivered(progress);
-    validateVideoMissionCompleted(mission, progress);
-
-    progress = getOrCreateProgress(user, mission, progress);
-    progress.markAsDelivered();
-    progressRepository.save(progress);
-
-    Integer experienceGained = grantExperienceReward(user);
-
-    logger.info(
-        "Successfully delivered mission for user: {}, mission: {}, XP gained: {}",
-        pathUserId,
-        missionId,
-        experienceGained);
-
-    return new DeliverResponse(
-        "任務交付成功", experienceGained, user.getExperiencePoints(), user.getLevel());
-  }
-
   private User findUserOrThrow(@NonNull Long userId) {
     return userRepository
         .findById(userId)
@@ -257,21 +209,6 @@ public class ProgressService {
     return progressRepository
         .findByUserIdAndMissionIdAndDeletedAtIsNull(userId, missionId)
         .orElse(null);
-  }
-
-  private void validateNotAlreadyDelivered(UserMissionProgress progress) {
-    if (progress != null && progress.getStatus() == ProgressStatus.DELIVERED) {
-      throw new MissionAlreadyDeliveredException("Mission has already been delivered");
-    }
-  }
-
-  private void validateVideoMissionCompleted(Mission mission, UserMissionProgress progress) {
-    boolean isVideoMission = mission.getType() == MissionType.VIDEO;
-    boolean isNotCompleted = progress == null || progress.getStatus() != ProgressStatus.COMPLETED;
-
-    if (isVideoMission && isNotCompleted) {
-      throw new MissionNotCompletedException("Video mission must be COMPLETED before delivery");
-    }
   }
 
   private UserMissionProgress getOrCreateProgress(

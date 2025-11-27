@@ -2,7 +2,7 @@ package waterballsa.repository;
 
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
-import waterballsa.entity.MissionResource;
+import waterballsa.entity.MissionResourceEntity;
 
 @Repository
-public interface MissionResourceRepository extends JpaRepository<MissionResource, Long> {}
+public interface MissionResourceRepository extends JpaRepository<MissionResourceEntity, Long> {}

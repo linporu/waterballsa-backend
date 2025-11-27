@@ -1,7 +1,7 @@
 package waterballsa.dto;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
-import waterballsa.entity.User.UserRole;
+import waterballsa.entity.UserEntity.UserRole;
 
 /**
  * 使用者資訊 DTO (Data Transfer Object)

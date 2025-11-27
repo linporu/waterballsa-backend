@@ -11,8 +11,8 @@ import org.springframework.transaction.annotation.Transactional;
 import waterballsa.dto.MissionDetailResponse;
 import waterballsa.dto.MissionResourceDTO;
 import waterballsa.dto.MissionRewardDTO;
-import waterballsa.entity.Mission;
-import waterballsa.entity.MissionResource;
+import waterballsa.entity.MissionEntity;
+import waterballsa.entity.MissionResourceEntity;
 import waterballsa.exception.ForbiddenException;
 import waterballsa.exception.MissionNotFoundException;
 import waterballsa.repository.MissionRepository;
@@ -51,7 +51,7 @@ public class MissionService {
         journeyId,
         userId);
 
-    Mission mission =
+    MissionEntity mission =
         missionRepository
             .findByIdWithDetails(missionId)
             .orElseThrow(() -> new MissionNotFoundException(missionId));
@@ -66,7 +66,7 @@ public class MissionService {
 
   // ==================== Helper Methods ====================
 
-  private MissionDetailResponse mapToMissionDetailResponse(Mission mission) {
+  private MissionDetailResponse mapToMissionDetailResponse(MissionEntity mission) {
     Long chapterId = mission.getChapter().getId();
     Long journeyId = mission.getChapter().getJourney().getId();
     Long createdAtMillis =
@@ -75,7 +75,7 @@ public class MissionService {
     List<MissionResourceDTO> resources =
         mission.getResources().stream()
             .filter(resource -> !resource.isDeleted())
-            .sorted(Comparator.comparing(MissionResource::getContentOrder))
+            .sorted(Comparator.comparing(MissionResourceEntity::getContentOrder))
             .map(this::mapToMissionResourceDTO)
             .collect(Collectors.toList());
 
@@ -98,7 +98,7 @@ public class MissionService {
         resources);
   }
 
-  private MissionResourceDTO mapToMissionResourceDTO(MissionResource resource) {
+  private MissionResourceDTO mapToMissionResourceDTO(MissionResourceEntity resource) {
     return new MissionResourceDTO(
         resource.getId(),
         resource.getResourceType().name().toLowerCase(),

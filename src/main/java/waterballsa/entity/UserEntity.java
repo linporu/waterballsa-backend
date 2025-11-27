@@ -7,7 +7,7 @@ import org.hibernate.type.SqlTypes;
 
 @Entity
 @Table(name = "users")
-public class User {
+public class UserEntity {
 
   @Id
   @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -39,11 +39,11 @@ public class User {
   @Column(name = "deleted_at")
   private LocalDateTime deletedAt;
 
-  protected User() {
+  protected UserEntity() {
     // JPA requires a no-arg constructor
   }
 
-  public User(String username, String passwordHash) {
+  public UserEntity(String username, String passwordHash) {
     this.username = username;
     this.passwordHash = passwordHash;
     this.role = UserRole.STUDENT;

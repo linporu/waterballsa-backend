@@ -1,7 +1,7 @@
 package waterballsa.entity;
 
 /** Mission type enumeration. */
-public enum MissionType {
+public enum MissionTypeEntity {
   VIDEO,
   ARTICLE,
   QUESTIONNAIRE

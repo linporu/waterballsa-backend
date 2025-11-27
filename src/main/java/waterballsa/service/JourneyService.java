@@ -12,9 +12,9 @@ import waterballsa.dto.JourneyDetailResponse;
 import waterballsa.dto.JourneyListItemDTO;
 import waterballsa.dto.JourneyListResponse;
 import waterballsa.dto.MissionSummaryDTO;
-import waterballsa.entity.Chapter;
-import waterballsa.entity.Journey;
-import waterballsa.entity.Mission;
+import waterballsa.entity.ChapterEntity;
+import waterballsa.entity.JourneyEntity;
+import waterballsa.entity.MissionEntity;
 import waterballsa.exception.JourneyNotFoundException;
 import waterballsa.repository.JourneyRepository;
 
@@ -38,7 +38,7 @@ public class JourneyService {
   public JourneyListResponse getJourneys() {
     logger.debug("Fetching all journeys");
 
-    List<Journey> journeys = journeyRepository.findAllNotDeleted();
+    List<JourneyEntity> journeys = journeyRepository.findAllNotDeleted();
 
     logger.info("Successfully fetched {} journeys", journeys.size());
 
@@ -59,7 +59,7 @@ public class JourneyService {
   public JourneyDetailResponse getJourneyDetail(Long journeyId) {
     logger.debug("Fetching journey details for journeyId: {}", journeyId);
 
-    Journey journey =
+    JourneyEntity journey =
         journeyRepository
             .findByIdWithChapters(journeyId)
             .orElseThrow(() -> new JourneyNotFoundException(journeyId));
@@ -72,11 +72,11 @@ public class JourneyService {
     return mapToJourneyDetailResponse(journey);
   }
 
-  private JourneyDetailResponse mapToJourneyDetailResponse(Journey journey) {
+  private JourneyDetailResponse mapToJourneyDetailResponse(JourneyEntity journey) {
     List<ChapterDTO> chapters =
         journey.getChapters().stream()
             .filter(chapter -> !chapter.isDeleted())
-            .sorted(Comparator.comparing(Chapter::getOrderIndex))
+            .sorted(Comparator.comparing(ChapterEntity::getOrderIndex))
             .map(this::mapToChapterDTO)
             .collect(Collectors.toList());
 
@@ -90,18 +90,18 @@ public class JourneyService {
         chapters);
   }
 
-  private ChapterDTO mapToChapterDTO(Chapter chapter) {
+  private ChapterDTO mapToChapterDTO(ChapterEntity chapter) {
     List<MissionSummaryDTO> missions =
         chapter.getMissions().stream()
             .filter(mission -> !mission.isDeleted())
-            .sorted(Comparator.comparing(Mission::getOrderIndex))
+            .sorted(Comparator.comparing(MissionEntity::getOrderIndex))
             .map(this::mapToMissionSummaryDTO)
             .collect(Collectors.toList());
 
     return new ChapterDTO(chapter.getId(), chapter.getTitle(), chapter.getOrderIndex(), missions);
   }
 
-  private MissionSummaryDTO mapToMissionSummaryDTO(Mission mission) {
+  private MissionSummaryDTO mapToMissionSummaryDTO(MissionEntity mission) {
     return new MissionSummaryDTO(
         mission.getId(),
         mission.getType().name(),
@@ -111,7 +111,7 @@ public class JourneyService {
         null); // status will be null for now (not implemented yet)
   }
 
-  private JourneyListItemDTO mapToJourneyListItemDTO(Journey journey) {
+  private JourneyListItemDTO mapToJourneyListItemDTO(JourneyEntity journey) {
     return new JourneyListItemDTO(
         journey.getId(),
         journey.getSlug(),

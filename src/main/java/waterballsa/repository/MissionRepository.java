@@ -5,10 +5,10 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
-import waterballsa.entity.Mission;
+import waterballsa.entity.MissionEntity;
 
 @Repository
-public interface MissionRepository extends JpaRepository<Mission, Long> {
+public interface MissionRepository extends JpaRepository<MissionEntity, Long> {
 
   /**
    * Find mission by ID with chapter, journey and resources eagerly loaded.
@@ -26,7 +26,7 @@ public interface MissionRepository extends JpaRepository<Mission, Long> {
           + "AND j.deletedAt IS NULL "
           + "AND mc.deletedAt IS NULL "
           + "ORDER BY mc.contentOrder")
-  Optional<Mission> findByIdWithDetails(@Param("id") Long id);
+  Optional<MissionEntity> findByIdWithDetails(@Param("id") Long id);
 
-  Optional<Mission> findByIdAndDeletedAtIsNull(Long id);
+  Optional<MissionEntity> findByIdAndDeletedAtIsNull(Long id);
 }

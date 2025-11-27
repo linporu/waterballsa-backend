@@ -7,14 +7,14 @@ import org.springframework.data.jpa.repository.Lock;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
-import waterballsa.entity.User;
+import waterballsa.entity.UserEntity;
 
 @Repository
-public interface UserRepository extends JpaRepository<User, Long> {
+public interface UserRepository extends JpaRepository<UserEntity, Long> {
 
-  Optional<User> findByUsernameAndDeletedAtIsNull(String username);
+  Optional<UserEntity> findByUsernameAndDeletedAtIsNull(String username);
 
-  Optional<User> findByIdAndDeletedAtIsNull(Long id);
+  Optional<UserEntity> findByIdAndDeletedAtIsNull(Long id);
 
   boolean existsByUsernameAndDeletedAtIsNull(String username);
 
@@ -26,5 +26,5 @@ public interface UserRepository extends JpaRepository<User, Long> {
    */
   @Lock(LockModeType.PESSIMISTIC_WRITE)
   @Query("SELECT u FROM User u WHERE u.id = :id AND u.deletedAt IS NULL")
-  Optional<User> findByIdForUpdate(@Param("id") Long id);
+  Optional<UserEntity> findByIdForUpdate(@Param("id") Long id);
 }

@@ -5,7 +5,7 @@ import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "access_tokens")
-public class AccessToken {
+public class AccessTokenEntity {
 
   @Id
   @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -26,11 +26,11 @@ public class AccessToken {
   @Column(name = "created_at", nullable = false, updatable = false)
   private LocalDateTime createdAt;
 
-  protected AccessToken() {
+  protected AccessTokenEntity() {
     // JPA requires a no-arg constructor
   }
 
-  public AccessToken(String tokenJti, Long userId, LocalDateTime expiresAt) {
+  public AccessTokenEntity(String tokenJti, Long userId, LocalDateTime expiresAt) {
     this.tokenJti = tokenJti;
     this.userId = userId;
     this.expiresAt = expiresAt;

@@ -12,8 +12,8 @@ import waterballsa.dto.LogoutResponse;
 import waterballsa.dto.RegisterRequest;
 import waterballsa.dto.RegisterResponse;
 import waterballsa.dto.UserInfo;
-import waterballsa.entity.AccessToken;
-import waterballsa.entity.User;
+import waterballsa.entity.AccessTokenEntity;
+import waterballsa.entity.UserEntity;
 import waterballsa.exception.DuplicateUsernameException;
 import waterballsa.exception.InvalidCredentialsException;
 import waterballsa.exception.UnauthorizedException;
@@ -56,8 +56,8 @@ public class AuthService {
     String passwordHash = passwordEncoder.encode(request.password());
 
     // Create and save user
-    User user = new User(request.username(), passwordHash);
-    User savedUser = userRepository.save(user);
+    UserEntity user = new UserEntity(request.username(), passwordHash);
+    UserEntity savedUser = userRepository.save(user);
 
     logger.info("User registered successfully with ID: {}", savedUser.getId());
 
@@ -69,7 +69,7 @@ public class AuthService {
     logger.debug("Attempting to login user: {}", request.username());
 
     // Find user by username (excluding soft-deleted users)
-    User user =
+    UserEntity user =
         userRepository
             .findByUsernameAndDeletedAtIsNull(request.username())
             .orElseThrow(
@@ -117,7 +117,7 @@ public class AuthService {
     }
 
     // Add token to blacklist
-    AccessToken accessToken = new AccessToken(jti, userId, expiresAt);
+    AccessTokenEntity accessToken = new AccessTokenEntity(jti, userId, expiresAt);
     accessTokenRepository.save(accessToken);
 
     logger.info("User logout successful: userId={}", userId);

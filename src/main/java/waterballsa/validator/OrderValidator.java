@@ -2,9 +2,9 @@ package waterballsa.validator;
 
 import org.springframework.stereotype.Component;
 import waterballsa.dto.CreateOrderRequest;
-import waterballsa.entity.Journey;
-import waterballsa.entity.Order;
-import waterballsa.entity.User;
+import waterballsa.entity.JourneyEntity;
+import waterballsa.entity.OrderEntity;
+import waterballsa.entity.UserEntity;
 import waterballsa.exception.InvalidJourneyIdException;
 import waterballsa.exception.JourneyAlreadyPurchasedException;
 import waterballsa.exception.JourneyNotFoundException;
@@ -46,7 +46,7 @@ public class OrderValidator {
    * @return the locked User entity
    * @throws UnauthorizedException if user not found
    */
-  public User validateAndLockUser(Long userId) {
+  public UserEntity validateAndLockUser(Long userId) {
     return userRepository
         .findByIdForUpdate(userId)
         .orElseThrow(() -> new UnauthorizedException("User not found"));
@@ -100,7 +100,7 @@ public class OrderValidator {
    * @return the validated Journey entity
    * @throws JourneyNotFoundException if journey not found
    */
-  public Journey validateAndGetJourney(Long journeyId) {
+  public JourneyEntity validateAndGetJourney(Long journeyId) {
     return journeyRepository
         .findByIdAndDeletedAtIsNull(journeyId)
         .orElseThrow(() -> new JourneyNotFoundException(journeyId));
@@ -112,7 +112,7 @@ public class OrderValidator {
    * @param order the order
    * @throws OrderAlreadyPaidException if order already paid
    */
-  public void validateOrderNotPaid(Order order) {
+  public void validateOrderNotPaid(OrderEntity order) {
     if (order.isPaid()) {
       throw new OrderAlreadyPaidException(order.getId());
     }
@@ -124,7 +124,7 @@ public class OrderValidator {
    * @param order the order
    * @throws OrderExpiredException if order has expired
    */
-  public void validateOrderNotExpired(Order order) {
+  public void validateOrderNotExpired(OrderEntity order) {
     if (order.isExpired()) {
       throw new OrderExpiredException(order.getId());
     }

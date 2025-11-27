@@ -5,10 +5,10 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
-import waterballsa.entity.UserJourney;
+import waterballsa.entity.UserJourneyEntity;
 
 @Repository
-public interface UserJourneyRepository extends JpaRepository<UserJourney, Long> {
+public interface UserJourneyRepository extends JpaRepository<UserJourneyEntity, Long> {
 
   /**
    * Check if user has already purchased the journey.
@@ -33,5 +33,5 @@ public interface UserJourneyRepository extends JpaRepository<UserJourney, Long> 
           + "AND uj.deletedAt IS NULL "
           + "AND o.status = 'PAID' "
           + "ORDER BY uj.purchasedAt DESC")
-  List<UserJourney> findPurchasedJourneysByUserId(@Param("userId") Long userId);
+  List<UserJourneyEntity> findPurchasedJourneysByUserId(@Param("userId") Long userId);
 }

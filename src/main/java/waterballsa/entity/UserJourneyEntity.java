@@ -5,7 +5,7 @@ import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "user_journeys")
-public class UserJourney {
+public class UserJourneyEntity {
 
   @Id
   @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -29,11 +29,11 @@ public class UserJourney {
   @Column(name = "deleted_at")
   private LocalDateTime deletedAt;
 
-  protected UserJourney() {
+  protected UserJourneyEntity() {
     // JPA requires a no-arg constructor
   }
 
-  public UserJourney(Long userId, Long journeyId, Long orderId, LocalDateTime purchasedAt) {
+  public UserJourneyEntity(Long userId, Long journeyId, Long orderId, LocalDateTime purchasedAt) {
     this.userId = userId;
     this.journeyId = journeyId;
     this.orderId = orderId;

@@ -6,7 +6,7 @@ import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "order_items")
-public class OrderItem {
+public class OrderItemEntity {
 
   @Id
   @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -14,7 +14,7 @@ public class OrderItem {
 
   @ManyToOne(fetch = FetchType.LAZY)
   @JoinColumn(name = "order_id", nullable = false)
-  private Order order;
+  private OrderEntity order;
 
   @Column(name = "journey_id", nullable = false)
   private Long journeyId;
@@ -37,11 +37,11 @@ public class OrderItem {
   @Column(name = "deleted_at")
   private LocalDateTime deletedAt;
 
-  protected OrderItem() {
+  protected OrderItemEntity() {
     // JPA requires a no-arg constructor
   }
 
-  public OrderItem(
+  public OrderItemEntity(
       Long journeyId, Integer quantity, BigDecimal originalPrice, BigDecimal discount) {
     this.journeyId = journeyId;
     this.quantity = quantity;
@@ -56,7 +56,7 @@ public class OrderItem {
   }
 
   // Business methods
-  public void setOrder(Order order) {
+  public void setOrder(OrderEntity order) {
     this.order = order;
   }
 
@@ -73,7 +73,7 @@ public class OrderItem {
     return id;
   }
 
-  public Order getOrder() {
+  public OrderEntity getOrder() {
     return order;
   }
 

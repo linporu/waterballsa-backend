@@ -3,10 +3,10 @@ package waterballsa.validator;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
-import waterballsa.entity.Mission;
-import waterballsa.entity.MissionType;
-import waterballsa.entity.ProgressStatus;
-import waterballsa.entity.UserMissionProgress;
+import waterballsa.entity.MissionEntity;
+import waterballsa.entity.MissionTypeEntity;
+import waterballsa.entity.ProgressStatusEntity;
+import waterballsa.entity.UserMissionProgressEntity;
 import waterballsa.exception.InvalidWatchPositionException;
 import waterballsa.exception.MissionAlreadyDeliveredException;
 import waterballsa.exception.MissionNotCompletedException;
@@ -73,7 +73,7 @@ public class ProgressValidator {
    * @return the validated Mission entity
    * @throws MissionNotFoundException if mission not found
    */
-  public Mission validateAndGetMission(Long missionId) {
+  public MissionEntity validateAndGetMission(Long missionId) {
     return missionRepository
         .findByIdWithDetails(missionId)
         .orElseThrow(() -> new MissionNotFoundException(missionId));
@@ -87,8 +87,8 @@ public class ProgressValidator {
    * @param mission the mission to validate
    * @throws UnsupportedMissionTypeException if mission type does not support progress tracking
    */
-  public void validateMissionTypeSupportsProgress(Mission mission) {
-    if (mission.getType() != MissionType.VIDEO) {
+  public void validateMissionTypeSupportsProgress(MissionEntity mission) {
+    if (mission.getType() != MissionTypeEntity.VIDEO) {
       throw new UnsupportedMissionTypeException("Mission type does not support progress tracking");
     }
   }
@@ -111,8 +111,8 @@ public class ProgressValidator {
    * @param progress the user mission progress
    * @throws MissionAlreadyDeliveredException if mission already delivered
    */
-  public void validateNotAlreadyDelivered(UserMissionProgress progress) {
-    if (progress != null && progress.getStatus() == ProgressStatus.DELIVERED) {
+  public void validateNotAlreadyDelivered(UserMissionProgressEntity progress) {
+    if (progress != null && progress.getStatus() == ProgressStatusEntity.DELIVERED) {
       throw new MissionAlreadyDeliveredException("Mission has already been delivered");
     }
   }
@@ -127,9 +127,11 @@ public class ProgressValidator {
    * @param progress the user mission progress
    * @throws MissionNotCompletedException if video mission not completed
    */
-  public void validateVideoMissionCompleted(Mission mission, UserMissionProgress progress) {
-    boolean isVideoMission = mission.getType() == MissionType.VIDEO;
-    boolean isNotCompleted = progress == null || progress.getStatus() != ProgressStatus.COMPLETED;
+  public void validateVideoMissionCompleted(
+      MissionEntity mission, UserMissionProgressEntity progress) {
+    boolean isVideoMission = mission.getType() == MissionTypeEntity.VIDEO;
+    boolean isNotCompleted =
+        progress == null || progress.getStatus() != ProgressStatusEntity.COMPLETED;
 
     if (isVideoMission && isNotCompleted) {
       throw new MissionNotCompletedException("Video mission must be COMPLETED before delivery");

@@ -1,7 +1,7 @@
 package waterballsa.entity;
 
 /** Resource type enumeration. */
-public enum ResourceType {
+public enum ResourceTypeEntity {
   VIDEO,
   ARTICLE,
   FORM

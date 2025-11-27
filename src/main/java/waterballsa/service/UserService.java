@@ -17,10 +17,10 @@ import waterballsa.dto.Pagination;
 import waterballsa.dto.UserInfo;
 import waterballsa.dto.UserJourneyItem;
 import waterballsa.dto.UserJourneyListResponse;
-import waterballsa.entity.Journey;
-import waterballsa.entity.Order;
-import waterballsa.entity.User;
-import waterballsa.entity.UserJourney;
+import waterballsa.entity.JourneyEntity;
+import waterballsa.entity.OrderEntity;
+import waterballsa.entity.UserEntity;
+import waterballsa.entity.UserJourneyEntity;
 import waterballsa.exception.JourneyNotFoundException;
 import waterballsa.exception.OrderNotFoundException;
 import waterballsa.exception.UserNotFoundException;
@@ -58,7 +58,7 @@ public class UserService {
   public UserInfo getUserById(Long userId) {
     logger.debug("Fetching user profile for user ID: {}", userId);
 
-    User user =
+    UserEntity user =
         userRepository
             .findByIdAndDeletedAtIsNull(userId)
             .orElseThrow(
@@ -100,7 +100,8 @@ public class UserService {
 
     // Fetch paginated orders (Spring Data uses 0-indexed pages)
     Pageable pageable = PageRequest.of(page - 1, limit);
-    Page<Order> orderPage = orderRepository.findByUserIdOrderByCreatedAtDesc(userId, pageable);
+    Page<OrderEntity> orderPage =
+        orderRepository.findByUserIdOrderByCreatedAtDesc(userId, pageable);
 
     // Map to DTOs
     List<OrderSummary> orderSummaries =
@@ -136,7 +137,8 @@ public class UserService {
     userAccessValidator.validateSelfAccess(userId, authenticatedUserId);
 
     // Fetch purchased journeys (only PAID orders)
-    List<UserJourney> userJourneys = userJourneyRepository.findPurchasedJourneysByUserId(userId);
+    List<UserJourneyEntity> userJourneys =
+        userJourneyRepository.findPurchasedJourneysByUserId(userId);
 
     // Map to DTOs
     List<UserJourneyItem> journeyItems =
@@ -156,7 +158,7 @@ public class UserService {
    * @param order Order entity
    * @return OrderSummary DTO
    */
-  private OrderSummary mapToOrderSummary(Order order) {
+  private OrderSummary mapToOrderSummary(OrderEntity order) {
     Long createdAtMillis =
         order.getCreatedAt().atZone(ZoneId.systemDefault()).toInstant().toEpochMilli();
 
@@ -172,7 +174,7 @@ public class UserService {
                   String journeyTitle =
                       journeyRepository
                           .findByIdAndDeletedAtIsNull(item.getJourneyId())
-                          .map(Journey::getTitle)
+                          .map(JourneyEntity::getTitle)
                           .orElse("Unknown Journey");
                   return new OrderItemSummary(item.getJourneyId(), journeyTitle);
                 })
@@ -195,13 +197,13 @@ public class UserService {
    * @return UserJourneyItem DTO
    */
   @SuppressWarnings("null")
-  private UserJourneyItem mapToUserJourneyItem(UserJourney userJourney) {
-    Journey journey =
+  private UserJourneyItem mapToUserJourneyItem(UserJourneyEntity userJourney) {
+    JourneyEntity journey =
         journeyRepository
             .findByIdAndDeletedAtIsNull(userJourney.getJourneyId())
             .orElseThrow(() -> new JourneyNotFoundException(userJourney.getJourneyId()));
 
-    Order order =
+    OrderEntity order =
         orderRepository
             .findById(userJourney.getOrderId())
             .orElseThrow(() -> new OrderNotFoundException(userJourney.getOrderId()));

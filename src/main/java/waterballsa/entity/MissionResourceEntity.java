@@ -7,7 +7,7 @@ import org.hibernate.type.SqlTypes;
 
 @Entity
 @Table(name = "mission_resources")
-public class MissionResource {
+public class MissionResourceEntity {
 
   @Id
   @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -15,12 +15,12 @@ public class MissionResource {
 
   @ManyToOne(fetch = FetchType.LAZY)
   @JoinColumn(name = "mission_id", nullable = false)
-  private Mission mission;
+  private MissionEntity mission;
 
   @Enumerated(EnumType.STRING)
   @JdbcTypeCode(SqlTypes.NAMED_ENUM)
   @Column(name = "resource_type", nullable = false, columnDefinition = "resource_type")
-  private ResourceType resourceType;
+  private ResourceTypeEntity resourceType;
 
   @Column(name = "resource_url", length = 1000)
   private String resourceUrl;
@@ -43,13 +43,13 @@ public class MissionResource {
   @Column(name = "deleted_at")
   private LocalDateTime deletedAt;
 
-  protected MissionResource() {
+  protected MissionResourceEntity() {
     // JPA requires a no-arg constructor
   }
 
-  public MissionResource(
-      Mission mission,
-      ResourceType resourceType,
+  public MissionResourceEntity(
+      MissionEntity mission,
+      ResourceTypeEntity resourceType,
       String resourceUrl,
       String resourceContent,
       Integer contentOrder,
@@ -86,11 +86,11 @@ public class MissionResource {
     return id;
   }
 
-  public Mission getMission() {
+  public MissionEntity getMission() {
     return mission;
   }
 
-  public ResourceType getResourceType() {
+  public ResourceTypeEntity getResourceType() {
     return resourceType;
   }
 

@@ -9,7 +9,7 @@ import org.hibernate.type.SqlTypes;
 
 @Entity
 @Table(name = "missions")
-public class Mission {
+public class MissionEntity {
 
   @Id
   @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -17,7 +17,7 @@ public class Mission {
 
   @ManyToOne(fetch = FetchType.LAZY)
   @JoinColumn(name = "chapter_id", nullable = false)
-  private Chapter chapter;
+  private ChapterEntity chapter;
 
   @Column(name = "title", nullable = false, length = 255)
   private String title;
@@ -25,7 +25,7 @@ public class Mission {
   @Enumerated(EnumType.STRING)
   @JdbcTypeCode(SqlTypes.NAMED_ENUM)
   @Column(name = "type", nullable = false, columnDefinition = "mission_type")
-  private MissionType type;
+  private MissionTypeEntity type;
 
   @Column(name = "description", columnDefinition = "TEXT")
   private String description;
@@ -33,7 +33,7 @@ public class Mission {
   @Enumerated(EnumType.STRING)
   @JdbcTypeCode(SqlTypes.NAMED_ENUM)
   @Column(name = "access_level", nullable = false, columnDefinition = "mission_access_level")
-  private MissionAccessLevel accessLevel;
+  private MissionAccessLevelEntity accessLevel;
 
   @Column(name = "order_index", nullable = false)
   private Integer orderIndex;
@@ -48,18 +48,18 @@ public class Mission {
   private LocalDateTime deletedAt;
 
   @OneToMany(mappedBy = "mission", fetch = FetchType.LAZY)
-  private List<MissionResource> resources = new ArrayList<>();
+  private List<MissionResourceEntity> resources = new ArrayList<>();
 
-  protected Mission() {
+  protected MissionEntity() {
     // JPA requires a no-arg constructor
   }
 
-  public Mission(
-      Chapter chapter,
+  public MissionEntity(
+      ChapterEntity chapter,
       String title,
-      MissionType type,
+      MissionTypeEntity type,
       String description,
-      MissionAccessLevel accessLevel,
+      MissionAccessLevelEntity accessLevel,
       Integer orderIndex) {
     this.chapter = chapter;
     this.title = title;
@@ -89,7 +89,7 @@ public class Mission {
   }
 
   public boolean isFreePreview() {
-    return this.accessLevel == MissionAccessLevel.PUBLIC;
+    return this.accessLevel == MissionAccessLevelEntity.PUBLIC;
   }
 
   // Getters
@@ -97,7 +97,7 @@ public class Mission {
     return id;
   }
 
-  public Chapter getChapter() {
+  public ChapterEntity getChapter() {
     return chapter;
   }
 
@@ -105,7 +105,7 @@ public class Mission {
     return title;
   }
 
-  public MissionType getType() {
+  public MissionTypeEntity getType() {
     return type;
   }
 
@@ -113,7 +113,7 @@ public class Mission {
     return description;
   }
 
-  public MissionAccessLevel getAccessLevel() {
+  public MissionAccessLevelEntity getAccessLevel() {
     return accessLevel;
   }
 
@@ -133,7 +133,7 @@ public class Mission {
     return deletedAt;
   }
 
-  public List<MissionResource> getResources() {
+  public List<MissionResourceEntity> getResources() {
     return resources;
   }
 }

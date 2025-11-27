@@ -88,25 +88,27 @@ public class OrderService {
 
     // Check if user already has an unpaid order for this journey
     var existingOrder =
-        orderRepository.findByUserIdAndStatusAndJourneyId(userId, OrderStatus.UNPAID, journeyId);
+        orderRepository.findByUserIdAndStatusAndJourneyId(
+            userId, OrderStatusEntity.UNPAID, journeyId);
     if (existingOrder.isPresent()) {
       logger.info("Returning existing unpaid order for user {} and journey {}", userId, journeyId);
       return new OrderCreationResult.Existing(mapToOrderResponse(existingOrder.get()));
     }
 
     // Fetch journey to lock price
-    Journey journey = orderValidator.validateAndGetJourney(journeyId);
+    JourneyEntity journey = orderValidator.validateAndGetJourney(journeyId);
 
     // Create order
     String orderNumber = OrderNumberGenerator.generate(userId);
     BigDecimal journeyPrice = journey.getPrice();
     BigDecimal discount = new BigDecimal("0.00");
 
-    Order order = new Order(orderNumber, userId, journeyPrice, discount);
+    OrderEntity order = new OrderEntity(orderNumber, userId, journeyPrice, discount);
 
     // Create order item with locked price
     CreateOrderRequest.OrderItemRequest itemRequest = request.items().get(0);
-    OrderItem orderItem = new OrderItem(journeyId, itemRequest.quantity(), journeyPrice, discount);
+    OrderItemEntity orderItem =
+        new OrderItemEntity(journeyId, itemRequest.quantity(), journeyPrice, discount);
     order.addItem(orderItem);
 
     // Save order
@@ -128,7 +130,7 @@ public class OrderService {
   public OrderResponse getOrderDetail(Long orderId, Long userId) {
     logger.debug("Fetching order {} for user {}", orderId, userId);
 
-    Order order =
+    OrderEntity order =
         orderRepository
             .findByIdAndUserId(orderId, userId)
             .orElseThrow(() -> new OrderNotFoundException(orderId));
@@ -152,7 +154,7 @@ public class OrderService {
     logger.debug("Processing payment for order {} by user {}", orderId, userId);
 
     // Fetch order with pessimistic lock and verify ownership
-    Order order =
+    OrderEntity order =
         orderRepository
             .findByIdAndUserIdForUpdate(orderId, userId)
             .orElseThrow(() -> new OrderNotFoundException(orderId));
@@ -165,9 +167,9 @@ public class OrderService {
     order = orderRepository.save(order);
 
     // Insert purchase records into user_journeys table to grant access
-    for (OrderItem item : order.getItems()) {
-      UserJourney userJourney =
-          new UserJourney(userId, item.getJourneyId(), orderId, order.getPaidAt());
+    for (OrderItemEntity item : order.getItems()) {
+      UserJourneyEntity userJourney =
+          new UserJourneyEntity(userId, item.getJourneyId(), orderId, order.getPaidAt());
       userJourneyRepository.save(userJourney);
       logger.info("Granted journey {} access to user {}", item.getJourneyId(), userId);
     }
@@ -187,10 +189,13 @@ public class OrderService {
 
   // ==================== Helper Methods ====================
 
-  private OrderResponse mapToOrderResponse(Order order) {
+  private OrderResponse mapToOrderResponse(OrderEntity order) {
     // Get username
     String username =
-        userRepository.findById(order.getUserId()).map(User::getUsername).orElse("Unknown User");
+        userRepository
+            .findById(order.getUserId())
+            .map(UserEntity::getUsername)
+            .orElse("Unknown User");
 
     // Convert timestamps to milliseconds
     Long createdAtMillis =
@@ -213,7 +218,7 @@ public class OrderService {
                   String journeyTitle =
                       journeyRepository
                           .findByIdAndDeletedAtIsNull(item.getJourneyId())
-                          .map(Journey::getTitle)
+                          .map(JourneyEntity::getTitle)
                           .orElse("Unknown Journey");
 
                   return new OrderResponse.OrderItemResponse(
@@ -246,13 +251,13 @@ public class OrderService {
   @Transactional
   public void expireOrders() {
     LocalDateTime now = LocalDateTime.now();
-    List<Order> expiredOrders =
-        orderRepository.findByStatusAndExpiredAtBefore(OrderStatus.UNPAID, now);
+    List<OrderEntity> expiredOrders =
+        orderRepository.findByStatusAndExpiredAtBefore(OrderStatusEntity.UNPAID, now);
 
     if (!expiredOrders.isEmpty()) {
       logger.info("Found {} orders to expire", expiredOrders.size());
 
-      for (Order order : expiredOrders) {
+      for (OrderEntity order : expiredOrders) {
         order.markAsExpired();
         orderRepository.save(order);
         logger.info("Expired order {}", order.getId());

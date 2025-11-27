@@ -6,10 +6,10 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
-import waterballsa.entity.Journey;
+import waterballsa.entity.JourneyEntity;
 
 @Repository
-public interface JourneyRepository extends JpaRepository<Journey, Long> {
+public interface JourneyRepository extends JpaRepository<JourneyEntity, Long> {
 
   /**
    * Find journey by ID with chapters eagerly loaded.
@@ -23,9 +23,9 @@ public interface JourneyRepository extends JpaRepository<Journey, Long> {
           + "WHERE j.id = :id AND j.deletedAt IS NULL "
           + "AND c.deletedAt IS NULL "
           + "ORDER BY c.orderIndex")
-  Optional<Journey> findByIdWithChapters(@Param("id") Long id);
+  Optional<JourneyEntity> findByIdWithChapters(@Param("id") Long id);
 
-  Optional<Journey> findByIdAndDeletedAtIsNull(Long id);
+  Optional<JourneyEntity> findByIdAndDeletedAtIsNull(Long id);
 
   /**
    * Find all journeys that are not soft-deleted, ordered by creation time (oldest first).
@@ -33,5 +33,5 @@ public interface JourneyRepository extends JpaRepository<Journey, Long> {
    * @return List of journeys
    */
   @Query("SELECT j FROM Journey j WHERE j.deletedAt IS NULL ORDER BY j.createdAt ASC")
-  List<Journey> findAllNotDeleted();
+  List<JourneyEntity> findAllNotDeleted();
 }

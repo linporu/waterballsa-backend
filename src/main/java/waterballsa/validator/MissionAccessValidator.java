@@ -3,8 +3,8 @@ package waterballsa.validator;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
-import waterballsa.entity.Mission;
-import waterballsa.entity.MissionAccessLevel;
+import waterballsa.entity.MissionAccessLevelEntity;
+import waterballsa.entity.MissionEntity;
 import waterballsa.exception.ForbiddenException;
 import waterballsa.exception.MissionNotFoundException;
 import waterballsa.repository.UserJourneyRepository;
@@ -37,7 +37,7 @@ public class MissionAccessValidator {
    * @param journeyId the expected journey ID
    * @throws MissionNotFoundException if mission doesn't belong to the journey
    */
-  public void validateMissionBelongsToJourney(Mission mission, Long journeyId) {
+  public void validateMissionBelongsToJourney(MissionEntity mission, Long journeyId) {
     Long actualJourneyId = mission.getChapter().getJourney().getId();
     if (!actualJourneyId.equals(journeyId)) {
       logger.warn(
@@ -66,11 +66,11 @@ public class MissionAccessValidator {
    *     logged in
    * @throws ForbiddenException if purchase required but user hasn't purchased
    */
-  public void validateMissionAccess(Mission mission, Long userId) {
-    MissionAccessLevel accessLevel = mission.getAccessLevel();
+  public void validateMissionAccess(MissionEntity mission, Long userId) {
+    MissionAccessLevelEntity accessLevel = mission.getAccessLevel();
 
     // PUBLIC missions are accessible to everyone
-    if (accessLevel == MissionAccessLevel.PUBLIC) {
+    if (accessLevel == MissionAccessLevelEntity.PUBLIC) {
       return;
     }
 
@@ -78,12 +78,12 @@ public class MissionAccessValidator {
     authValidator.validateUserAuthenticated(userId);
 
     // AUTHENTICATED missions only require login
-    if (accessLevel == MissionAccessLevel.AUTHENTICATED) {
+    if (accessLevel == MissionAccessLevelEntity.AUTHENTICATED) {
       return;
     }
 
     // PURCHASED missions require journey purchase
-    if (accessLevel == MissionAccessLevel.PURCHASED) {
+    if (accessLevel == MissionAccessLevelEntity.PURCHASED) {
       Long journeyId = mission.getChapter().getJourney().getId();
       boolean hasPurchased = userJourneyRepository.existsByUserIdAndJourneyId(userId, journeyId);
       if (!hasPurchased) {

@@ -1,7 +1,7 @@
 package waterballsa.entity;
 
 /** Mission access level enumeration. */
-public enum MissionAccessLevel {
+public enum MissionAccessLevelEntity {
   PUBLIC,
   AUTHENTICATED,
   PURCHASED

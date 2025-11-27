@@ -2,7 +2,7 @@ package waterballsa.repository;
 
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
-import waterballsa.entity.Chapter;
+import waterballsa.entity.ChapterEntity;
 
 @Repository
-public interface ChapterRepository extends JpaRepository<Chapter, Long> {}
+public interface ChapterRepository extends JpaRepository<ChapterEntity, Long> {}

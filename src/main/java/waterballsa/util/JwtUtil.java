@@ -13,7 +13,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
-import waterballsa.entity.User;
+import waterballsa.entity.UserEntity;
 
 @Component
 public class JwtUtil {
@@ -35,7 +35,7 @@ public class JwtUtil {
    * @param user the user to generate token for
    * @return JWT token string
    */
-  public String generateToken(User user) {
+  public String generateToken(UserEntity user) {
     Instant now = Instant.now();
     Instant expiration = now.plusMillis(expirationMs);
     String jti = UUID.randomUUID().toString();

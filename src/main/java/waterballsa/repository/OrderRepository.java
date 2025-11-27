@@ -11,11 +11,11 @@ import org.springframework.data.jpa.repository.Lock;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
-import waterballsa.entity.Order;
-import waterballsa.entity.OrderStatus;
+import waterballsa.entity.OrderEntity;
+import waterballsa.entity.OrderStatusEntity;
 
 @Repository
-public interface OrderRepository extends JpaRepository<Order, Long> {
+public interface OrderRepository extends JpaRepository<OrderEntity, Long> {
 
   /**
    * Find order by order number.
@@ -23,7 +23,7 @@ public interface OrderRepository extends JpaRepository<Order, Long> {
    * @param orderNumber Order number
    * @return Optional of Order
    */
-  Optional<Order> findByOrderNumber(String orderNumber);
+  Optional<OrderEntity> findByOrderNumber(String orderNumber);
 
   /**
    * Find order by ID and user ID (for ownership verification).
@@ -32,7 +32,7 @@ public interface OrderRepository extends JpaRepository<Order, Long> {
    * @param userId User ID
    * @return Optional of Order
    */
-  Optional<Order> findByIdAndUserId(Long id, Long userId);
+  Optional<OrderEntity> findByIdAndUserId(Long id, Long userId);
 
   /**
    * Find unpaid order by user ID and journey ID. Used to check if user already has an unpaid order
@@ -51,9 +51,9 @@ public interface OrderRepository extends JpaRepository<Order, Long> {
           + "AND oi.journeyId = :journeyId "
           + "AND o.deletedAt IS NULL "
           + "ORDER BY o.createdAt DESC LIMIT 1")
-  Optional<Order> findByUserIdAndStatusAndJourneyId(
+  Optional<OrderEntity> findByUserIdAndStatusAndJourneyId(
       @Param("userId") Long userId,
-      @Param("status") OrderStatus status,
+      @Param("status") OrderStatusEntity status,
       @Param("journeyId") Long journeyId);
 
   /**
@@ -68,7 +68,8 @@ public interface OrderRepository extends JpaRepository<Order, Long> {
           + "WHERE o.userId = :userId "
           + "AND o.deletedAt IS NULL "
           + "ORDER BY o.createdAt DESC")
-  Page<Order> findByUserIdOrderByCreatedAtDesc(@Param("userId") Long userId, Pageable pageable);
+  Page<OrderEntity> findByUserIdOrderByCreatedAtDesc(
+      @Param("userId") Long userId, Pageable pageable);
 
   /**
    * Find orders by status where expiration time has passed. Used by scheduled task to expire unpaid
@@ -78,7 +79,7 @@ public interface OrderRepository extends JpaRepository<Order, Long> {
    * @param now Current time
    * @return List of orders that should be expired
    */
-  List<Order> findByStatusAndExpiredAtBefore(OrderStatus status, LocalDateTime now);
+  List<OrderEntity> findByStatusAndExpiredAtBefore(OrderStatusEntity status, LocalDateTime now);
 
   /**
    * Find order by ID and user ID with pessimistic write lock for payment processing.
@@ -92,5 +93,6 @@ public interface OrderRepository extends JpaRepository<Order, Long> {
    */
   @Lock(LockModeType.PESSIMISTIC_WRITE)
   @Query("SELECT o FROM Order o WHERE o.id = :id AND o.userId = :userId AND o.deletedAt IS NULL")
-  Optional<Order> findByIdAndUserIdForUpdate(@Param("id") Long id, @Param("userId") Long userId);
+  Optional<OrderEntity> findByIdAndUserIdForUpdate(
+      @Param("id") Long id, @Param("userId") Long userId);
 }

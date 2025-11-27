@@ -11,7 +11,7 @@ import org.springframework.lang.NonNull;
 
 @Entity
 @Table(name = "orders")
-public class Order {
+public class OrderEntity {
 
   @Id
   @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -27,7 +27,7 @@ public class Order {
   @Enumerated(EnumType.STRING)
   @JdbcTypeCode(SqlTypes.NAMED_ENUM)
   @Column(name = "status", nullable = false, columnDefinition = "order_status")
-  private OrderStatus status;
+  private OrderStatusEntity status;
 
   @Column(name = "original_price", nullable = false, precision = 10, scale = 2)
   private BigDecimal originalPrice;
@@ -54,18 +54,18 @@ public class Order {
   private LocalDateTime deletedAt;
 
   @OneToMany(mappedBy = "order", cascade = CascadeType.ALL, orphanRemoval = true)
-  private List<OrderItem> items = new ArrayList<>();
+  private List<OrderItemEntity> items = new ArrayList<>();
 
   @SuppressWarnings("null")
-  protected Order() {
+  protected OrderEntity() {
     // JPA requires a no-arg constructor
   }
 
-  public Order(
+  public OrderEntity(
       String orderNumber, @NonNull Long userId, BigDecimal originalPrice, BigDecimal discount) {
     this.orderNumber = orderNumber;
     this.userId = userId;
-    this.status = OrderStatus.UNPAID;
+    this.status = OrderStatusEntity.UNPAID;
     this.originalPrice = originalPrice;
     this.discount = discount;
     this.price = originalPrice.subtract(discount);
@@ -76,7 +76,7 @@ public class Order {
     this.createdAt = LocalDateTime.now();
     this.updatedAt = LocalDateTime.now();
     // Set expiration to 3 days after creation for unpaid orders
-    if (this.status == OrderStatus.UNPAID) {
+    if (this.status == OrderStatusEntity.UNPAID) {
       this.expiredAt = this.createdAt.plusDays(3);
     }
   }
@@ -87,26 +87,26 @@ public class Order {
   }
 
   // Business methods
-  public void addItem(OrderItem item) {
+  public void addItem(OrderItemEntity item) {
     items.add(item);
     item.setOrder(this);
   }
 
   public void markAsPaid() {
-    this.status = OrderStatus.PAID;
+    this.status = OrderStatusEntity.PAID;
     this.paidAt = LocalDateTime.now();
   }
 
   public boolean isPaid() {
-    return this.status == OrderStatus.PAID;
+    return this.status == OrderStatusEntity.PAID;
   }
 
   public void markAsExpired() {
-    this.status = OrderStatus.EXPIRED;
+    this.status = OrderStatusEntity.EXPIRED;
   }
 
   public boolean isExpired() {
-    return this.status == OrderStatus.EXPIRED;
+    return this.status == OrderStatusEntity.EXPIRED;
   }
 
   public void softDelete() {
@@ -131,7 +131,7 @@ public class Order {
     return userId;
   }
 
-  public OrderStatus getStatus() {
+  public OrderStatusEntity getStatus() {
     return status;
   }
 
@@ -167,7 +167,7 @@ public class Order {
     return deletedAt;
   }
 
-  public List<OrderItem> getItems() {
+  public List<OrderItemEntity> getItems() {
     return items;
   }
 }

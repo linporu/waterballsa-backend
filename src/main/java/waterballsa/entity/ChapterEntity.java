@@ -7,7 +7,7 @@ import java.util.List;
 
 @Entity
 @Table(name = "chapters")
-public class Chapter {
+public class ChapterEntity {
 
   @Id
   @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -15,7 +15,7 @@ public class Chapter {
 
   @ManyToOne(fetch = FetchType.LAZY)
   @JoinColumn(name = "journey_id", nullable = false)
-  private Journey journey;
+  private JourneyEntity journey;
 
   @Column(name = "title", nullable = false, length = 255)
   private String title;
@@ -33,13 +33,13 @@ public class Chapter {
   private LocalDateTime deletedAt;
 
   @OneToMany(mappedBy = "chapter", fetch = FetchType.LAZY)
-  private List<Mission> missions = new ArrayList<>();
+  private List<MissionEntity> missions = new ArrayList<>();
 
-  protected Chapter() {
+  protected ChapterEntity() {
     // JPA requires a no-arg constructor
   }
 
-  public Chapter(Journey journey, String title, Integer orderIndex) {
+  public ChapterEntity(JourneyEntity journey, String title, Integer orderIndex) {
     this.journey = journey;
     this.title = title;
     this.orderIndex = orderIndex;
@@ -69,7 +69,7 @@ public class Chapter {
     return id;
   }
 
-  public Journey getJourney() {
+  public JourneyEntity getJourney() {
     return journey;
   }
 
@@ -93,7 +93,7 @@ public class Chapter {
     return deletedAt;
   }
 
-  public List<Mission> getMissions() {
+  public List<MissionEntity> getMissions() {
     return missions;
   }
 }

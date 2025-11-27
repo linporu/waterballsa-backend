@@ -1,7 +1,7 @@
 package waterballsa.entity;
 
 /** Progress status enumeration. */
-public enum ProgressStatus {
+public enum ProgressStatusEntity {
   UNCOMPLETED,
   COMPLETED,
   DELIVERED

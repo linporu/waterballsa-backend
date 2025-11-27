@@ -8,11 +8,11 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import waterballsa.dto.DeliverResponse;
 import waterballsa.dto.UserMissionProgressResponse;
-import waterballsa.entity.Mission;
-import waterballsa.entity.MissionResource;
-import waterballsa.entity.ProgressStatus;
-import waterballsa.entity.User;
-import waterballsa.entity.UserMissionProgress;
+import waterballsa.entity.MissionEntity;
+import waterballsa.entity.MissionResourceEntity;
+import waterballsa.entity.ProgressStatusEntity;
+import waterballsa.entity.UserEntity;
+import waterballsa.entity.UserMissionProgressEntity;
 import waterballsa.exception.UnauthorizedException;
 import waterballsa.repository.UserMissionProgressRepository;
 import waterballsa.repository.UserRepository;
@@ -57,14 +57,14 @@ public class ProgressService {
     progressValidator.validateProgressAccess(pathUserId, currentUserId);
     progressValidator.validateMissionExists(missionId);
 
-    UserMissionProgress progress =
+    UserMissionProgressEntity progress =
         progressRepository
             .findByUserIdAndMissionIdAndDeletedAtIsNull(pathUserId, missionId)
             .orElse(null);
 
     if (progress == null) {
       logger.debug("No progress record found, returning default progress");
-      return new UserMissionProgressResponse(missionId, ProgressStatus.UNCOMPLETED.name(), 0);
+      return new UserMissionProgressResponse(missionId, ProgressStatusEntity.UNCOMPLETED.name(), 0);
     }
 
     logger.info("Successfully retrieved progress for user: {}, mission: {}", pathUserId, missionId);
@@ -93,23 +93,23 @@ public class ProgressService {
     progressValidator.validateProgressAccess(pathUserId, currentUserId);
     progressValidator.validateWatchPosition(watchPositionSeconds);
 
-    Mission mission = progressValidator.validateAndGetMission(missionId);
+    MissionEntity mission = progressValidator.validateAndGetMission(missionId);
     progressValidator.validateMissionTypeSupportsProgress(mission);
 
     Integer videoDuration = getVideoDuration(mission);
     Integer cappedPosition = capWatchPosition(watchPositionSeconds, videoDuration);
 
-    UserMissionProgress progress =
+    UserMissionProgressEntity progress =
         progressRepository
             .findByUserIdAndMissionIdAndDeletedAtIsNull(pathUserId, missionId)
             .orElseGet(
                 () -> {
-                  User user =
+                  UserEntity user =
                       userRepository
                           .findById(pathUserId)
                           .orElseThrow(
                               () -> new UnauthorizedException("User not found: " + pathUserId));
-                  return new UserMissionProgress(user, mission);
+                  return new UserMissionProgressEntity(user, mission);
                 });
 
     progress.updateWatchPosition(cappedPosition);
@@ -150,9 +150,9 @@ public class ProgressService {
 
     progressValidator.validateProgressAccess(pathUserId, currentUserId);
 
-    Mission mission = progressValidator.validateAndGetMission(missionId);
-    User user = findUserOrThrow(pathUserId);
-    UserMissionProgress progress = findProgress(pathUserId, missionId);
+    MissionEntity mission = progressValidator.validateAndGetMission(missionId);
+    UserEntity user = findUserOrThrow(pathUserId);
+    UserMissionProgressEntity progress = findProgress(pathUserId, missionId);
 
     progressValidator.validateNotAlreadyDelivered(progress);
     progressValidator.validateVideoMissionCompleted(mission, progress);
@@ -175,12 +175,12 @@ public class ProgressService {
 
   // ==================== Helper Methods ====================
 
-  private Integer getVideoDuration(Mission mission) {
+  private Integer getVideoDuration(MissionEntity mission) {
     return mission.getResources().stream()
         .filter(resource -> !resource.isDeleted())
-        .sorted(Comparator.comparing(MissionResource::getContentOrder))
+        .sorted(Comparator.comparing(MissionResourceEntity::getContentOrder))
         .filter(resource -> resource.getDurationSeconds() != null)
-        .map(MissionResource::getDurationSeconds)
+        .map(MissionResourceEntity::getDurationSeconds)
         .findFirst()
         .orElse(null);
   }
@@ -192,34 +192,34 @@ public class ProgressService {
     return Math.min(watchPosition, duration);
   }
 
-  private UserMissionProgressResponse mapToResponse(UserMissionProgress progress) {
+  private UserMissionProgressResponse mapToResponse(UserMissionProgressEntity progress) {
     return new UserMissionProgressResponse(
         progress.getMission().getId(),
         progress.getStatus().name(),
         progress.getWatchPositionSeconds());
   }
 
-  private User findUserOrThrow(@NonNull Long userId) {
+  private UserEntity findUserOrThrow(@NonNull Long userId) {
     return userRepository
         .findById(userId)
         .orElseThrow(() -> new UnauthorizedException("User not found: " + userId));
   }
 
-  private UserMissionProgress findProgress(Long userId, Long missionId) {
+  private UserMissionProgressEntity findProgress(Long userId, Long missionId) {
     return progressRepository
         .findByUserIdAndMissionIdAndDeletedAtIsNull(userId, missionId)
         .orElse(null);
   }
 
-  private UserMissionProgress getOrCreateProgress(
-      User user, Mission mission, UserMissionProgress progress) {
+  private UserMissionProgressEntity getOrCreateProgress(
+      UserEntity user, MissionEntity mission, UserMissionProgressEntity progress) {
     if (progress == null) {
-      return new UserMissionProgress(user, mission);
+      return new UserMissionProgressEntity(user, mission);
     }
     return progress;
   }
 
-  private Integer grantExperienceReward(User user) {
+  private Integer grantExperienceReward(UserEntity user) {
     Integer experienceGained = DEFAULT_EXPERIENCE_REWARD;
     user.addExperience(experienceGained);
     userRepository.save(user);

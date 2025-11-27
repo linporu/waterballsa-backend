@@ -8,7 +8,7 @@ import java.util.List;
 
 @Entity
 @Table(name = "journeys")
-public class Journey {
+public class JourneyEntity {
 
   @Id
   @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -42,13 +42,13 @@ public class Journey {
   private LocalDateTime deletedAt;
 
   @OneToMany(mappedBy = "journey", fetch = FetchType.LAZY)
-  private List<Chapter> chapters = new ArrayList<>();
+  private List<ChapterEntity> chapters = new ArrayList<>();
 
-  protected Journey() {
+  protected JourneyEntity() {
     // JPA requires a no-arg constructor
   }
 
-  public Journey(
+  public JourneyEntity(
       String title,
       String slug,
       String description,
@@ -123,7 +123,7 @@ public class Journey {
     return deletedAt;
   }
 
-  public List<Chapter> getChapters() {
+  public List<ChapterEntity> getChapters() {
     return chapters;
   }
 }

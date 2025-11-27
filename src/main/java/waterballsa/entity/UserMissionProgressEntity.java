@@ -7,7 +7,7 @@ import org.hibernate.type.SqlTypes;
 
 @Entity
 @Table(name = "user_mission_progress")
-public class UserMissionProgress {
+public class UserMissionProgressEntity {
 
   @Id
   @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -15,16 +15,16 @@ public class UserMissionProgress {
 
   @ManyToOne(fetch = FetchType.LAZY)
   @JoinColumn(name = "user_id", nullable = false)
-  private User user;
+  private UserEntity user;
 
   @ManyToOne(fetch = FetchType.LAZY)
   @JoinColumn(name = "mission_id", nullable = false)
-  private Mission mission;
+  private MissionEntity mission;
 
   @Enumerated(EnumType.STRING)
   @JdbcTypeCode(SqlTypes.NAMED_ENUM)
   @Column(name = "status", nullable = false, columnDefinition = "progress_status")
-  private ProgressStatus status;
+  private ProgressStatusEntity status;
 
   @Column(name = "watch_position_seconds", nullable = false)
   private Integer watchPositionSeconds;
@@ -38,14 +38,14 @@ public class UserMissionProgress {
   @Column(name = "deleted_at")
   private LocalDateTime deletedAt;
 
-  protected UserMissionProgress() {
+  protected UserMissionProgressEntity() {
     // JPA requires a no-arg constructor
   }
 
-  public UserMissionProgress(User user, Mission mission) {
+  public UserMissionProgressEntity(UserEntity user, MissionEntity mission) {
     this.user = user;
     this.mission = mission;
-    this.status = ProgressStatus.UNCOMPLETED;
+    this.status = ProgressStatusEntity.UNCOMPLETED;
     this.watchPositionSeconds = 0;
   }
 
@@ -73,13 +73,13 @@ public class UserMissionProgress {
   }
 
   public void markAsCompleted() {
-    if (this.status == ProgressStatus.UNCOMPLETED) {
-      this.status = ProgressStatus.COMPLETED;
+    if (this.status == ProgressStatusEntity.UNCOMPLETED) {
+      this.status = ProgressStatusEntity.COMPLETED;
     }
   }
 
   public void markAsDelivered() {
-    this.status = ProgressStatus.DELIVERED;
+    this.status = ProgressStatusEntity.DELIVERED;
   }
 
   // Getters
@@ -87,15 +87,15 @@ public class UserMissionProgress {
     return id;
   }
 
-  public User getUser() {
+  public UserEntity getUser() {
     return user;
   }
 
-  public Mission getMission() {
+  public MissionEntity getMission() {
     return mission;
   }
 
-  public ProgressStatus getStatus() {
+  public ProgressStatusEntity getStatus() {
     return status;
   }
 

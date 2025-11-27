@@ -17,22 +17,26 @@ import waterballsa.entity.*;
 import waterballsa.exception.*;
 import waterballsa.repository.*;
 import waterballsa.util.OrderNumberGenerator;
+import waterballsa.validator.OrderValidator;
 
 @Service
 public class OrderService {
 
   private static final Logger logger = LoggerFactory.getLogger(OrderService.class);
 
+  private final OrderValidator orderValidator;
   private final OrderRepository orderRepository;
   private final JourneyRepository journeyRepository;
   private final UserJourneyRepository userJourneyRepository;
   private final UserRepository userRepository;
 
   public OrderService(
+      OrderValidator orderValidator,
       OrderRepository orderRepository,
       JourneyRepository journeyRepository,
       UserJourneyRepository userJourneyRepository,
       UserRepository userRepository) {
+    this.orderValidator = orderValidator;
     this.orderRepository = orderRepository;
     this.journeyRepository = journeyRepository;
     this.userJourneyRepository = userJourneyRepository;
@@ -75,29 +79,12 @@ public class OrderService {
       @org.springframework.lang.NonNull Long userId, CreateOrderRequest request) {
     logger.debug("Creating order for user: {}", userId);
 
-    // Acquire pessimistic lock on user to prevent concurrent order creation
-    userRepository
-        .findByIdForUpdate(userId)
-        .orElseThrow(() -> new UnauthorizedException("User not found"));
+    orderValidator.validateAndLockUser(userId);
+    orderValidator.validateOrderRequest(request);
 
-    // Validate request
-    if (request.items().isEmpty()) {
-      throw new InvalidJourneyIdException("Order must contain at least one item");
-    }
+    Long journeyId = request.items().get(0).journeyId();
 
-    CreateOrderRequest.OrderItemRequest itemRequest = request.items().get(0);
-    Long journeyId = itemRequest.journeyId();
-
-    // Validate journey ID
-    if (journeyId == null || journeyId <= 0) {
-      throw new InvalidJourneyIdException(journeyId);
-    }
-
-    // Check if user already purchased this journey
-    if (userJourneyRepository.existsByUserIdAndJourneyId(userId, journeyId)) {
-      logger.warn("User {} already purchased journey {}", userId, journeyId);
-      throw new JourneyAlreadyPurchasedException(userId, journeyId);
-    }
+    orderValidator.validateJourneyNotPurchased(userId, journeyId);
 
     // Check if user already has an unpaid order for this journey
     var existingOrder =
@@ -108,10 +95,7 @@ public class OrderService {
     }
 
     // Fetch journey to lock price
-    Journey journey =
-        journeyRepository
-            .findByIdAndDeletedAtIsNull(journeyId)
-            .orElseThrow(() -> new JourneyNotFoundException(journeyId));
+    Journey journey = orderValidator.validateAndGetJourney(journeyId);
 
     // Create order
     String orderNumber = OrderNumberGenerator.generate(userId);
@@ -121,6 +105,7 @@ public class OrderService {
     Order order = new Order(orderNumber, userId, journeyPrice, discount);
 
     // Create order item with locked price
+    CreateOrderRequest.OrderItemRequest itemRequest = request.items().get(0);
     OrderItem orderItem = new OrderItem(journeyId, itemRequest.quantity(), journeyPrice, discount);
     order.addItem(orderItem);
 
@@ -172,17 +157,8 @@ public class OrderService {
             .findByIdAndUserId(orderId, userId)
             .orElseThrow(() -> new OrderNotFoundException(orderId));
 
-    // Check if already paid
-    if (order.isPaid()) {
-      logger.warn("Order {} is already paid", orderId);
-      throw new OrderAlreadyPaidException(orderId);
-    }
-
-    // Check if order has expired
-    if (order.isExpired()) {
-      logger.warn("Order {} has expired", orderId);
-      throw new OrderExpiredException(orderId);
-    }
+    orderValidator.validateOrderNotPaid(order);
+    orderValidator.validateOrderNotExpired(order);
 
     // Mark order as paid
     order.markAsPaid();
@@ -208,6 +184,8 @@ public class OrderService {
         paidAtMillis,
         "付款完成");
   }
+
+  // ==================== Helper Methods ====================
 
   private OrderResponse mapToOrderResponse(Order order) {
     // Get username

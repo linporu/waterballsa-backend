@@ -28,22 +28,26 @@ import waterballsa.repository.JourneyRepository;
 import waterballsa.repository.OrderRepository;
 import waterballsa.repository.UserJourneyRepository;
 import waterballsa.repository.UserRepository;
+import waterballsa.validator.UserAccessValidator;
 
 @Service
 public class UserService {
 
   private static final Logger logger = LoggerFactory.getLogger(UserService.class);
 
+  private final UserAccessValidator userAccessValidator;
   private final UserRepository userRepository;
   private final OrderRepository orderRepository;
   private final UserJourneyRepository userJourneyRepository;
   private final JourneyRepository journeyRepository;
 
   public UserService(
+      UserAccessValidator userAccessValidator,
       UserRepository userRepository,
       OrderRepository orderRepository,
       UserJourneyRepository userJourneyRepository,
       JourneyRepository journeyRepository) {
+    this.userAccessValidator = userAccessValidator;
     this.userRepository = userRepository;
     this.orderRepository = orderRepository;
     this.userJourneyRepository = userJourneyRepository;
@@ -92,11 +96,7 @@ public class UserService {
         page,
         limit);
 
-    // Verify user can only access their own orders
-    if (!userId.equals(authenticatedUserId)) {
-      logger.warn("User {} attempted to access orders of user {}", authenticatedUserId, userId);
-      throw new UserNotFoundException("User not found");
-    }
+    userAccessValidator.validateSelfAccess(userId, authenticatedUserId);
 
     // Fetch paginated orders (Spring Data uses 0-indexed pages)
     Pageable pageable = PageRequest.of(page - 1, limit);
@@ -133,11 +133,7 @@ public class UserService {
         userId,
         authenticatedUserId);
 
-    // Verify user can only access their own journeys
-    if (!userId.equals(authenticatedUserId)) {
-      logger.warn("User {} attempted to access journeys of user {}", authenticatedUserId, userId);
-      throw new UserNotFoundException("User not found");
-    }
+    userAccessValidator.validateSelfAccess(userId, authenticatedUserId);
 
     // Fetch purchased journeys (only PAID orders)
     List<UserJourney> userJourneys = userJourneyRepository.findPurchasedJourneysByUserId(userId);

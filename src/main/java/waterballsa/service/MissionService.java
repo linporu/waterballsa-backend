@@ -12,13 +12,11 @@ import waterballsa.dto.MissionDetailResponse;
 import waterballsa.dto.MissionResourceDTO;
 import waterballsa.dto.MissionRewardDTO;
 import waterballsa.entity.Mission;
-import waterballsa.entity.MissionAccessLevel;
 import waterballsa.entity.MissionResource;
 import waterballsa.exception.ForbiddenException;
 import waterballsa.exception.MissionNotFoundException;
 import waterballsa.repository.MissionRepository;
-import waterballsa.repository.UserJourneyRepository;
-import waterballsa.util.AuthenticationValidator;
+import waterballsa.validator.MissionAccessValidator;
 
 @Service
 public class MissionService {
@@ -26,13 +24,14 @@ public class MissionService {
   private static final Logger logger = LoggerFactory.getLogger(MissionService.class);
   private static final Integer DEFAULT_EXPERIENCE_REWARD = 100;
 
+  private final MissionAccessValidator missionAccessValidator;
   private final MissionRepository missionRepository;
-  private final UserJourneyRepository userJourneyRepository;
 
   public MissionService(
-      MissionRepository missionRepository, UserJourneyRepository userJourneyRepository) {
+      MissionAccessValidator missionAccessValidator,
+      MissionRepository missionRepository) {
+    this.missionAccessValidator = missionAccessValidator;
     this.missionRepository = missionRepository;
-    this.userJourneyRepository = userJourneyRepository;
   }
 
   /**
@@ -58,53 +57,15 @@ public class MissionService {
             .findByIdWithDetails(missionId)
             .orElseThrow(() -> new MissionNotFoundException(missionId));
 
-    validateMissionBelongsToJourney(mission, journeyId);
-
-    checkMissionAccess(mission, userId);
+    missionAccessValidator.validateMissionBelongsToJourney(mission, journeyId);
+    missionAccessValidator.validateMissionAccess(mission, userId);
 
     logger.info("Successfully fetched mission: {} for user: {}", missionId, userId);
 
     return mapToMissionDetailResponse(mission);
   }
 
-  private void validateMissionBelongsToJourney(Mission mission, Long journeyId) {
-    Long actualJourneyId = mission.getChapter().getJourney().getId();
-    if (!actualJourneyId.equals(journeyId)) {
-      logger.warn(
-          "Mission {} does not belong to journey {}. Actual journey: {}",
-          mission.getId(),
-          journeyId,
-          actualJourneyId);
-      throw new MissionNotFoundException("Mission not found in the specified journey");
-    }
-  }
-
-  private void checkMissionAccess(Mission mission, Long userId) {
-    MissionAccessLevel accessLevel = mission.getAccessLevel();
-
-    // PUBLIC missions are accessible to everyone
-    if (accessLevel == MissionAccessLevel.PUBLIC) {
-      return;
-    }
-
-    // For AUTHENTICATED and PURCHASED, user must be logged in
-    AuthenticationValidator.validateUserAuthenticated(userId);
-
-    // AUTHENTICATED missions only require login
-    if (accessLevel == MissionAccessLevel.AUTHENTICATED) {
-      return;
-    }
-
-    // PURCHASED missions require journey purchase
-    if (accessLevel == MissionAccessLevel.PURCHASED) {
-      Long journeyId = mission.getChapter().getJourney().getId();
-      boolean hasPurchased = userJourneyRepository.existsByUserIdAndJourneyId(userId, journeyId);
-      if (!hasPurchased) {
-        throw new ForbiddenException("You need to purchase this journey to access this mission");
-      }
-      return;
-    }
-  }
+  // ==================== Helper Methods ====================
 
   private MissionDetailResponse mapToMissionDetailResponse(Mission mission) {
     Long chapterId = mission.getChapter().getId();

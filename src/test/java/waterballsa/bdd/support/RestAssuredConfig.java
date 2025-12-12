@@ -30,10 +30,7 @@ public class RestAssuredConfig {
     RestAssured.enableLoggingOfRequestAndResponseIfValidationFails();
   }
 
-  /**
-   * Clean all test data from the database.
-   * Deletes in order to respect foreign key constraints.
-   */
+  /** Clean all test data from the database. Deletes in order to respect foreign key constraints. */
   private void cleanDatabase() {
     jdbcTemplate.execute("DELETE FROM user_mission_progress WHERE TRUE");
     jdbcTemplate.execute("DELETE FROM order_items WHERE TRUE");

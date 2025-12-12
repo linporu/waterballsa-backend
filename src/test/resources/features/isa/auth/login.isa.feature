@@ -6,18 +6,14 @@
 Feature: User Login API Implementation
 
   Background:
-    # Clean slate for each scenario - tests should create their own data
+    # Database is cleaned before each scenario (handled by @Before hook)
 
   Scenario: Successful login with valid credentials
-    # Setup: Register a test user first
-    Given I send "POST" request to "/auth/register" with body:
-      """
-      {
-        "username": "Alice",
-        "password": "Test1234!"
-      }
-      """
-    Then the response status code should be 201
+    # Setup: Create test user directly in database
+    Given the database has a user:
+      | username   | Alice       |
+      | password   | Test1234!   |
+      | experience | 0           |
 
     # Action: Login with valid credentials
     When I send "POST" request to "/auth/login" with body:
@@ -28,24 +24,26 @@ Feature: User Login API Implementation
       }
       """
 
-    # Verification: Check response matches Swagger spec
+    # Verification: HTTP layer
     Then the response status code should be 200
+
+    # Verification: Response structure
     And the response body should contain field "accessToken"
+    And the response body should contain field "user.id"
+    And the response body should contain field "user.username"
+    And the response body should contain field "user.experience"
+
+    # Verification: Response values
     And the response body field "user.username" should equal "Alice"
     And the response body field "user.experience" should equal "0"
 
   Scenario: Failed login with wrong password
-    # Setup: Register a test user first
-    Given I send "POST" request to "/auth/register" with body:
-      """
-      {
-        "username": "Bob",
-        "password": "Correct123!"
-      }
-      """
-    Then the response status code should be 201
+    # Setup: Create test user
+    Given the database has a user:
+      | username | Bob         |
+      | password | Correct123! |
 
-    # Action: Login with wrong password
+    # Action: Attempt login with wrong password
     When I send "POST" request to "/auth/login" with body:
       """
       {
@@ -54,12 +52,17 @@ Feature: User Login API Implementation
       }
       """
 
-    # Verification: Check error response matches Swagger spec
+    # Verification: HTTP layer
     Then the response status code should be 401
+
+    # Verification: Error response
+    And the response body should contain field "error"
     And the response body field "error" should equal "帳號或密碼錯誤"
 
   Scenario: Failed login with non-existent username
-    # Action: Login with non-existent user
+    # No setup needed - user doesn't exist
+
+    # Action: Attempt login with non-existent user
     When I send "POST" request to "/auth/login" with body:
       """
       {
@@ -68,6 +71,9 @@ Feature: User Login API Implementation
       }
       """
 
-    # Verification: Check error response matches Swagger spec
+    # Verification: HTTP layer
     Then the response status code should be 401
+
+    # Verification: Error response
+    And the response body should contain field "error"
     And the response body field "error" should equal "帳號或密碼錯誤"

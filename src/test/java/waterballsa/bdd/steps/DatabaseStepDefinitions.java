@@ -56,6 +56,9 @@ public class DatabaseStepDefinitions {
    *   | experience | 0         |
    * </pre>
    *
+   * <p>The generated user ID is automatically stored in the variable "lastUserId" for use in
+   * subsequent steps.
+   *
    * @param dataTable DataTable containing user data with keys: username (required), password
    *     (required), experience (optional, default: 0)
    */
@@ -70,13 +73,29 @@ public class DatabaseStepDefinitions {
     // Hash the password using BCrypt
     String passwordHash = passwordEncoder.encode(password);
 
+    KeyHolder keyHolder = new GeneratedKeyHolder();
+
     // Insert user with default role=STUDENT and level=1
     jdbcTemplate.update(
-        "INSERT INTO users (username, password_hash, role, experience_points, level) "
-            + "VALUES (?, ?, 'STUDENT', ?, 1)",
-        username,
-        passwordHash,
-        experience);
+        connection -> {
+          PreparedStatement ps =
+              connection.prepareStatement(
+                  "INSERT INTO users (username, password_hash, role, experience_points, level) "
+                      + "VALUES (?, ?, 'STUDENT', ?, 1)",
+                  Statement.RETURN_GENERATED_KEYS);
+          ps.setString(1, username);
+          ps.setString(2, passwordHash);
+          ps.setInt(3, experience);
+          return ps;
+        },
+        keyHolder);
+
+    // Store the generated user ID for use in subsequent steps
+    Map<String, Object> keys = keyHolder.getKeys();
+    if (keys != null && !keys.isEmpty()) {
+      Long userId = ((Number) keys.get("id")).longValue();
+      world.setVariable("lastUserId", userId.toString());
+    }
   }
 
   /**
@@ -438,5 +457,102 @@ public class DatabaseStepDefinitions {
         resourceUrl,
         contentOrder,
         durationSeconds);
+  }
+
+  /**
+   * Update the price of a journey in the database.
+   *
+   * <p>This is useful for testing price locking scenarios where we need to change the journey price
+   * after an order has been created.
+   *
+   * <p>Usage example:
+   *
+   * <pre>
+   * Given I update the journey with id "{{lastJourneyId}}" to price "2999.00"
+   * </pre>
+   *
+   * @param journeyIdStr journey ID (supports variable replacement with {{variableName}})
+   * @param newPrice new price value
+   */
+  @Given("I update the journey with id {string} to price {string}")
+  public void updateJourneyPrice(String journeyIdStr, String newPrice) {
+    // Support variable replacement for journey_id
+    String processedJourneyId = world.replaceVariables(journeyIdStr);
+    long journeyId = Long.parseLong(processedJourneyId);
+    BigDecimal price = new BigDecimal(newPrice);
+
+    jdbcTemplate.update(
+        "UPDATE journeys SET price = ?, updated_at = NOW() WHERE id = ?", price, journeyId);
+  }
+
+  /**
+   * Verify the count of unpaid orders for a specific user and journey in the database.
+   *
+   * <p>Usage example:
+   *
+   * <pre>
+   * Then the database should have 1 unpaid order for user "{{lastUserId}}" and journey "{{lastJourneyId}}"
+   * Then the database should have 2 unpaid orders for user "1"
+   * </pre>
+   *
+   * @param expectedCount expected number of unpaid orders
+   * @param userIdStr user ID (supports variable replacement)
+   * @param journeyIdStr journey ID (supports variable replacement), optional - if not provided,
+   *     counts all unpaid orders for the user
+   */
+  @Given("the database should have {int} unpaid order(s) for user {string} and journey {string}")
+  public void verifyUnpaidOrderCountForUserAndJourney(
+      int expectedCount, String userIdStr, String journeyIdStr) {
+    String processedUserId = world.replaceVariables(userIdStr);
+    String processedJourneyId = world.replaceVariables(journeyIdStr);
+    long userId = Long.parseLong(processedUserId);
+    long journeyId = Long.parseLong(processedJourneyId);
+
+    // Count unpaid orders for this user and journey combination
+    Integer count =
+        jdbcTemplate.queryForObject(
+            "SELECT COUNT(*) FROM orders o "
+                + "INNER JOIN order_items oi ON o.id = oi.order_id "
+                + "WHERE o.user_id = ? AND o.status = 'UNPAID' AND oi.journey_id = ?",
+            Integer.class,
+            userId,
+            journeyId);
+
+    if (count != expectedCount) {
+      throw new AssertionError(
+          String.format(
+              "Expected %d unpaid orders for user %d and journey %d, but found %d",
+              expectedCount, userId, journeyId, count));
+    }
+  }
+
+  /**
+   * Verify the total count of unpaid orders for a specific user in the database.
+   *
+   * <p>Usage example:
+   *
+   * <pre>
+   * Then the database should have 2 unpaid orders for user "{{lastUserId}}"
+   * </pre>
+   *
+   * @param expectedCount expected number of unpaid orders
+   * @param userIdStr user ID (supports variable replacement)
+   */
+  @Given("the database should have {int} unpaid order(s) for user {string}")
+  public void verifyUnpaidOrderCountForUser(int expectedCount, String userIdStr) {
+    String processedUserId = world.replaceVariables(userIdStr);
+    long userId = Long.parseLong(processedUserId);
+
+    Integer count =
+        jdbcTemplate.queryForObject(
+            "SELECT COUNT(*) FROM orders WHERE user_id = ? AND status = 'UNPAID'",
+            Integer.class,
+            userId);
+
+    if (count != expectedCount) {
+      throw new AssertionError(
+          String.format(
+              "Expected %d unpaid orders for user %d, but found %d", expectedCount, userId, count));
+    }
   }
 }

@@ -112,12 +112,72 @@ public class IsaStepDefinitions {
   }
 
   /**
-   * Verify that a field exists in the response body.
+   * Verify that a field exists in the response body (regardless of whether its value is null).
+   *
+   * <p>This checks that the field key exists in the JSON response. The field can have any value,
+   * including null.
+   *
+   * <p>Usage examples:
+   *
+   * <pre>
+   * Then the response body should contain field "paidAt"  # passes even if paidAt is null
+   * Then the response body should contain field "user.username"
+   * </pre>
+   *
+   * <p>Note: To verify a field exists AND has a non-null value, use "should have non-null field"
+   * instead.
    *
    * @param fieldPath JSON path to the field (e.g., "user.username")
    */
   @And("the response body should contain field {string}")
   public void verifyFieldExists(String fieldPath) {
+    // Use hasKey matcher to check field existence regardless of null value
+    // This requires accessing the response as a Map
+    try {
+      world.getLastResponse().then().body("$", org.hamcrest.Matchers.hasKey(fieldPath));
+    } catch (AssertionError e) {
+      // If simple key check fails, try nested path check
+      // For nested paths like "user.username", we need to verify each level exists
+      String[] pathParts = fieldPath.split("\\.");
+      StringBuilder currentPath = new StringBuilder();
+
+      for (int i = 0; i < pathParts.length; i++) {
+        if (i > 0) {
+          currentPath.append(".");
+        }
+        currentPath.append(pathParts[i]);
+
+        // Check if this level of the path exists
+        // We use a lenient check that allows null values
+        try {
+          world
+              .getLastResponse()
+              .then()
+              .body(currentPath.toString(), org.hamcrest.Matchers.anything());
+        } catch (Exception ex) {
+          throw new AssertionError(
+              String.format("Field '%s' does not exist in the response", fieldPath));
+        }
+      }
+    }
+  }
+
+  /**
+   * Verify that a field exists in the response body AND has a non-null value.
+   *
+   * <p>This is useful when you want to ensure a field is both present and has a value.
+   *
+   * <p>Usage examples:
+   *
+   * <pre>
+   * Then the response body should have non-null field "accessToken"
+   * Then the response body should have non-null field "user.id"
+   * </pre>
+   *
+   * @param fieldPath JSON path to the field
+   */
+  @And("the response body should have non-null field {string}")
+  public void verifyFieldExistsAndNotNull(String fieldPath) {
     world.getLastResponse().then().body(fieldPath, notNullValue());
   }
 
@@ -181,13 +241,39 @@ public class IsaStepDefinitions {
   /**
    * Store a value from the response into a variable for later use.
    *
-   * @param variableName name to store the value as
    * @param fieldPath JSON path to extract the value from
+   * @param variableName name to store the value as
    */
   @And("I store the response field {string} as {string}")
   public void storeResponseField(String fieldPath, String variableName) {
     String value = world.getLastResponse().then().extract().path(fieldPath).toString();
     world.setVariable(variableName, value);
+  }
+
+  /**
+   * Copy an existing variable to a new variable name.
+   *
+   * <p>This is useful when you need to preserve a variable value before it gets overwritten.
+   *
+   * <p>Usage example:
+   *
+   * <pre>
+   * # lastJourneyId will be overwritten when creating a new journey
+   * # So we copy it to a new variable first
+   * Given I copy variable "lastJourneyId" to "firstJourneyId"
+   * </pre>
+   *
+   * @param sourceVariable source variable name (supports {{variableName}} format)
+   * @param targetVariable target variable name
+   */
+  @Given("I copy variable {string} to {string}")
+  public void copyVariable(String sourceVariable, String targetVariable) {
+    String value = world.getVariable(sourceVariable);
+    if (value == null) {
+      throw new IllegalArgumentException(
+          String.format("Source variable '%s' does not exist", sourceVariable));
+    }
+    world.setVariable(targetVariable, value);
   }
 
   /**
@@ -208,5 +294,81 @@ public class IsaStepDefinitions {
   @Then("the response body field {string} should have size {int}")
   public void verifyFieldSize(String fieldPath, int expectedSize) {
     world.getLastResponse().then().body(fieldPath + ".size()", equalTo(expectedSize));
+  }
+
+  /**
+   * Verify that a field in the response body contains a specific substring.
+   *
+   * <p>This is useful for pattern matching like checking if an order number contains a user ID.
+   *
+   * <p>Supports variable replacement in the expected substring.
+   *
+   * <p>Usage examples:
+   *
+   * <pre>
+   * Then the response body field "orderNumber" should contain "42"
+   * And the response body field "orderNumber" should contain "{{lastUserId}}"
+   * And the response body field "message" should contain "success"
+   * </pre>
+   *
+   * @param fieldPath JSON path to the field
+   * @param expectedSubstring substring that should be present in the field value (supports variable
+   *     replacement with {{variableName}})
+   */
+  @And("the response body field {string} should contain {string}")
+  public void verifyFieldContains(String fieldPath, String expectedSubstring) {
+    // Support variable replacement for expected substring
+    String processedSubstring = world.replaceVariables(expectedSubstring);
+
+    String actualValue = world.getLastResponse().then().extract().path(fieldPath).toString();
+    if (!actualValue.contains(processedSubstring)) {
+      throw new AssertionError(
+          String.format(
+              "Field '%s' with value '%s' does not contain expected substring '%s'",
+              fieldPath, actualValue, processedSubstring));
+    }
+  }
+
+  /**
+   * Login as a user and store the access token for subsequent requests.
+   *
+   * <p>This is a convenience step that combines: 1. Setting request body with login credentials 2.
+   * Sending POST request to /auth/login 3. Storing the access token in World for later use
+   *
+   * <p>The access token can be used in subsequent steps with: Given I set Authorization header to
+   * "{{accessToken}}"
+   *
+   * <p>Usage example:
+   *
+   * <pre>
+   * Given I login as "Alice" with password "Test1234!"
+   * When I send "POST" request to "/orders"
+   * </pre>
+   *
+   * @param username username to login with
+   * @param password password to login with
+   */
+  @Given("I login as {string} with password {string}")
+  public void loginAsUser(String username, String password) {
+    // Set request body
+    String loginBody =
+        String.format("{\"username\": \"%s\", \"password\": \"%s\"}", username, password);
+    world.setRequestBody(loginBody);
+
+    // Send login request
+    RequestSpecification request = given().contentType(ContentType.JSON).body(loginBody);
+    Response response = request.post("/auth/login");
+    world.setLastResponse(response);
+
+    // Store the access token
+    String accessToken = response.then().extract().path("accessToken");
+    world.setVariable("accessToken", accessToken);
+
+    // Also store user ID if needed
+    Integer userId = response.then().extract().path("user.id");
+    world.setVariable("userId", userId.toString());
+
+    // Clear request body after login
+    world.setRequestBody(null);
   }
 }

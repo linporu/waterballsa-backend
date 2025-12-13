@@ -336,6 +336,9 @@ public class DatabaseStepDefinitions {
           journeyId,
           orderId);
     }
+
+    // Store the generated order ID for use in subsequent steps
+    world.setVariable("lastOrderId", orderId.toString());
   }
 
   /**

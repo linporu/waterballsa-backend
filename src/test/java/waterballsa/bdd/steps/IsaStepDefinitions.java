@@ -5,10 +5,13 @@ import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.notNullValue;
 
 import io.cucumber.java.en.And;
+import io.cucumber.java.en.Given;
 import io.cucumber.java.en.Then;
 import io.cucumber.java.en.When;
 import io.restassured.http.ContentType;
 import io.restassured.response.Response;
+import io.restassured.specification.RequestSpecification;
+import java.util.Map;
 import org.springframework.beans.factory.annotation.Autowired;
 import waterballsa.bdd.support.World;
 
@@ -31,22 +34,66 @@ public class IsaStepDefinitions {
   @Autowired private World world;
 
   /**
-   * Send an HTTP request with a JSON body.
+   * Set the Authorization header for the next HTTP request.
+   *
+   * <p>This is a setup step that prepares the Authorization header. The actual request is sent by a
+   * separate "When I send..." step.
+   *
+   * @param token Authorization token (supports variable substitution with {{variableName}})
+   */
+  @Given("I set Authorization header to {string}")
+  public void setAuthorizationHeader(String token) {
+    String processedToken = world.replaceVariables(token);
+    world.setHeader("Authorization", "Bearer " + processedToken);
+  }
+
+  /**
+   * Set the request body for the next HTTP request.
+   *
+   * <p>This is a setup step that prepares the request body. The actual request is sent by a
+   * separate "When I send..." step.
+   *
+   * @param body JSON request body (supports variable substitution with {{variableName}})
+   */
+  @Given("I set request body to:")
+  public void setRequestBody(String body) {
+    String processedBody = world.replaceVariables(body);
+    world.setRequestBody(processedBody);
+  }
+
+  /**
+   * Send an HTTP request with any previously configured headers and body.
+   *
+   * <p>This step applies all headers and body that were set by previous "Given I set..." steps. If
+   * no headers or body were set, it sends a plain request.
+   *
+   * <p>After sending the request, headers and body are cleared automatically to prevent
+   * contamination between scenarios.
    *
    * @param method HTTP method (GET, POST, PUT, DELETE)
    * @param endpoint API endpoint path
-   * @param body JSON request body
    */
-  @When("I send {string} request to {string} with body:")
-  public void sendRequestWithBody(String method, String endpoint, String body) {
-    // Replace any variables in the body (e.g., {{token}})
-    String processedBody = world.replaceVariables(body);
+  @When("I send {string} request to {string}")
+  public void sendRequest(String method, String endpoint) {
+    RequestSpecification request = given();
+
+    // Apply all headers from World
+    for (Map.Entry<String, String> header : world.getHeaders().entrySet()) {
+      request.header(header.getKey(), header.getValue());
+    }
+
+    // Apply body from World if exists
+    if (world.getRequestBody() != null) {
+      request.contentType(ContentType.JSON).body(world.getRequestBody());
+    }
 
     // Send the request and store the response
-    Response response =
-        given().contentType(ContentType.JSON).body(processedBody).request(method, endpoint);
-
+    Response response = request.request(method, endpoint);
     world.setLastResponse(response);
+
+    // Clear headers and body after sending to prevent contamination
+    world.getHeaders().clear();
+    world.setRequestBody(null);
   }
 
   /**
@@ -96,38 +143,5 @@ public class IsaStepDefinitions {
   public void storeResponseField(String fieldPath, String variableName) {
     String value = world.getLastResponse().then().extract().path(fieldPath).toString();
     world.setVariable(variableName, value);
-  }
-
-  /**
-   * Send an HTTP request with Authorization header.
-   *
-   * @param method HTTP method (GET, POST, PUT, DELETE)
-   * @param endpoint API endpoint path
-   * @param token Authorization token (supports variable substitution with {{variableName}})
-   */
-  @When("I send {string} request to {string} with authorization {string}")
-  public void sendRequestWithAuth(String method, String endpoint, String token) {
-    // Replace any variables in the token (e.g., {{token}})
-    String processedToken = world.replaceVariables(token);
-
-    // Send the request with Authorization header and store the response
-    Response response =
-        given().header("Authorization", "Bearer " + processedToken).request(method, endpoint);
-
-    world.setLastResponse(response);
-  }
-
-  /**
-   * Send an HTTP request without body or headers.
-   *
-   * @param method HTTP method (GET, POST, PUT, DELETE)
-   * @param endpoint API endpoint path
-   */
-  @When("I send {string} request to {string}")
-  public void sendRequest(String method, String endpoint) {
-    // Send the request and store the response
-    Response response = given().request(method, endpoint);
-
-    world.setLastResponse(response);
   }
 }

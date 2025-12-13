@@ -15,14 +15,17 @@ Feature: User Login API Implementation
       | password   | Test1234!   |
       | experience | 0           |
 
-    # Action: Login with valid credentials
-    When I send "POST" request to "/auth/login" with body:
+    # Setup: Prepare login request body
+    And I set request body to:
       """
       {
         "username": "Alice",
         "password": "Test1234!"
       }
       """
+
+    # Action: Login with valid credentials
+    When I send "POST" request to "/auth/login"
 
     # Verification: HTTP layer
     Then the response status code should be 200
@@ -43,14 +46,17 @@ Feature: User Login API Implementation
       | username | Bob         |
       | password | Correct123! |
 
-    # Action: Attempt login with wrong password
-    When I send "POST" request to "/auth/login" with body:
+    # Setup: Prepare login request body with wrong password
+    And I set request body to:
       """
       {
         "username": "Bob",
         "password": "WrongPassword!"
       }
       """
+
+    # Action: Attempt login with wrong password
+    When I send "POST" request to "/auth/login"
 
     # Verification: HTTP layer
     Then the response status code should be 401
@@ -62,14 +68,17 @@ Feature: User Login API Implementation
   Scenario: Failed login with non-existent username
     # No setup needed - user doesn't exist
 
-    # Action: Attempt login with non-existent user
-    When I send "POST" request to "/auth/login" with body:
+    # Setup: Prepare login request body with non-existent user
+    Given I set request body to:
       """
       {
         "username": "NonExistentUser",
         "password": "AnyPassword123!"
       }
       """
+
+    # Action: Attempt login with non-existent user
+    When I send "POST" request to "/auth/login"
 
     # Verification: HTTP layer
     Then the response status code should be 401

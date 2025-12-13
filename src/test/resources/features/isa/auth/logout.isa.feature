@@ -15,14 +15,17 @@ Feature: User Logout API Implementation
       | password   | Test1234! |
       | experience | 0         |
 
-    # Action: Login to get access token
-    When I send "POST" request to "/auth/login" with body:
+    # Setup: Prepare login request body
+    And I set request body to:
       """
       {
         "username": "Alice",
         "password": "Test1234!"
       }
       """
+
+    # Action: Login to get access token
+    When I send "POST" request to "/auth/login"
 
     # Verification: Login successful
     Then the response status code should be 200
@@ -31,8 +34,11 @@ Feature: User Logout API Implementation
     # Store token for logout
     And I store the response field "accessToken" as "token"
 
+    # Setup: Set Authorization header for logout
+    Given I set Authorization header to "{{token}}"
+
     # Action: Logout with valid token
-    When I send "POST" request to "/auth/logout" with authorization "{{token}}"
+    When I send "POST" request to "/auth/logout"
 
     # Verification: HTTP layer
     Then the response status code should be 200
@@ -63,14 +69,17 @@ Feature: User Logout API Implementation
       | password   | Secure123!  |
       | experience | 0           |
 
-    # Action: Login to get access token
-    When I send "POST" request to "/auth/login" with body:
+    # Setup: Prepare login request body
+    And I set request body to:
       """
       {
         "username": "Bob",
         "password": "Secure123!"
       }
       """
+
+    # Action: Login to get access token
+    When I send "POST" request to "/auth/login"
 
     # Verification: Login successful
     Then the response status code should be 200
@@ -79,15 +88,21 @@ Feature: User Logout API Implementation
     # Store token for first logout
     And I store the response field "accessToken" as "token"
 
+    # Setup: Set Authorization header for first logout
+    Given I set Authorization header to "{{token}}"
+
     # Action: First logout (token will be blacklisted)
-    When I send "POST" request to "/auth/logout" with authorization "{{token}}"
+    When I send "POST" request to "/auth/logout"
 
     # Verification: First logout successful
     Then the response status code should be 200
     And the response body field "message" should equal "Logout successful"
 
+    # Setup: Set Authorization header for second logout attempt
+    Given I set Authorization header to "{{token}}"
+
     # Action: Attempt second logout with same (now blacklisted) token
-    When I send "POST" request to "/auth/logout" with authorization "{{token}}"
+    When I send "POST" request to "/auth/logout"
 
     # Verification: HTTP layer
     Then the response status code should be 401

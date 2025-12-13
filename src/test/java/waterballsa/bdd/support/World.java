@@ -14,6 +14,8 @@ import org.springframework.stereotype.Component;
  * <ul>
  *   <li>Last HTTP response received
  *   <li>Variables for dynamic data (e.g., tokens, IDs)
+ *   <li>HTTP request headers for the next request
+ *   <li>HTTP request body for the next request
  *   <li>Test data created during scenario execution
  * </ul>
  *
@@ -24,6 +26,8 @@ public class World {
 
   private Response lastResponse;
   private final Map<String, String> variables = new HashMap<>();
+  private final Map<String, String> headers = new HashMap<>();
+  private String requestBody;
 
   /**
    * Get the last HTTP response received.
@@ -79,9 +83,48 @@ public class World {
     return result;
   }
 
+  /**
+   * Get all stored headers for the next request.
+   *
+   * @return map of header names to values
+   */
+  public Map<String, String> getHeaders() {
+    return headers;
+  }
+
+  /**
+   * Set a header for the next request.
+   *
+   * @param name header name
+   * @param value header value
+   */
+  public void setHeader(String name, String value) {
+    headers.put(name, value);
+  }
+
+  /**
+   * Get the request body for the next request.
+   *
+   * @return request body, or null if not set
+   */
+  public String getRequestBody() {
+    return requestBody;
+  }
+
+  /**
+   * Set the request body for the next request.
+   *
+   * @param body request body
+   */
+  public void setRequestBody(String body) {
+    this.requestBody = body;
+  }
+
   /** Clear all stored data (called between scenarios). */
   public void reset() {
     lastResponse = null;
     variables.clear();
+    headers.clear();
+    requestBody = null;
   }
 }

@@ -270,8 +270,11 @@ public class DatabaseStepDefinitions {
   public void databaseHasOrder(DataTable dataTable) {
     Map<String, String> orderData = dataTable.asMap(String.class, String.class);
 
-    long userId = Long.parseLong(orderData.get("user_id"));
-    long journeyId = Long.parseLong(orderData.get("journey_id"));
+    // Support variable replacement for user_id and journey_id
+    String userIdStr = world.replaceVariables(orderData.get("user_id"));
+    String journeyIdStr = world.replaceVariables(orderData.get("journey_id"));
+    long userId = Long.parseLong(userIdStr);
+    long journeyId = Long.parseLong(journeyIdStr);
     String status = orderData.getOrDefault("status", "UNPAID");
 
     // First, get the journey price

@@ -97,4 +97,37 @@ public class IsaStepDefinitions {
     String value = world.getLastResponse().then().extract().path(fieldPath).toString();
     world.setVariable(variableName, value);
   }
+
+  /**
+   * Send an HTTP request with Authorization header.
+   *
+   * @param method HTTP method (GET, POST, PUT, DELETE)
+   * @param endpoint API endpoint path
+   * @param token Authorization token (supports variable substitution with {{variableName}})
+   */
+  @When("I send {string} request to {string} with authorization {string}")
+  public void sendRequestWithAuth(String method, String endpoint, String token) {
+    // Replace any variables in the token (e.g., {{token}})
+    String processedToken = world.replaceVariables(token);
+
+    // Send the request with Authorization header and store the response
+    Response response =
+        given().header("Authorization", "Bearer " + processedToken).request(method, endpoint);
+
+    world.setLastResponse(response);
+  }
+
+  /**
+   * Send an HTTP request without body or headers.
+   *
+   * @param method HTTP method (GET, POST, PUT, DELETE)
+   * @param endpoint API endpoint path
+   */
+  @When("I send {string} request to {string}")
+  public void sendRequest(String method, String endpoint) {
+    // Send the request and store the response
+    Response response = given().request(method, endpoint);
+
+    world.setLastResponse(response);
+  }
 }

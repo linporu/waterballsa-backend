@@ -31,7 +31,7 @@ Feature: User Registration API Implementation
     And the response body should contain field "userId"
 
     # Verification: Response values
-    And the response body field "message" should equal "Registration successful"
+    And the response body field "message" should equal string "Registration successful"
 
   Scenario: Attempt to register with existing username
     # Setup: Create test user in database
@@ -56,7 +56,7 @@ Feature: User Registration API Implementation
 
     # Verification: Error response
     And the response body should contain field "error"
-    And the response body field "error" should equal "使用者名稱已存在"
+    And the response body field "error" should equal string "使用者名稱已存在"
 
   Scenario: Register with minimum username length (3 characters)
     # No setup needed - user doesn't exist yet
@@ -81,7 +81,7 @@ Feature: User Registration API Implementation
     And the response body should contain field "userId"
 
     # Verification: Response values
-    And the response body field "message" should equal "Registration successful"
+    And the response body field "message" should equal string "Registration successful"
 
   Scenario: Register with maximum username length (50 characters)
     # No setup needed - user doesn't exist yet
@@ -106,7 +106,7 @@ Feature: User Registration API Implementation
     And the response body should contain field "userId"
 
     # Verification: Response values
-    And the response body field "message" should equal "Registration successful"
+    And the response body field "message" should equal string "Registration successful"
 
   Scenario: Register with minimum password length (8 characters)
     # No setup needed - user doesn't exist yet
@@ -131,7 +131,7 @@ Feature: User Registration API Implementation
     And the response body should contain field "userId"
 
     # Verification: Response values
-    And the response body field "message" should equal "Registration successful"
+    And the response body field "message" should equal string "Registration successful"
 
   Scenario: Register with maximum password length (72 characters)
     # No setup needed - user doesn't exist yet
@@ -156,7 +156,7 @@ Feature: User Registration API Implementation
     And the response body should contain field "userId"
 
     # Verification: Response values
-    And the response body field "message" should equal "Registration successful"
+    And the response body field "message" should equal string "Registration successful"
 
   Scenario: Failed registration with username too short (2 characters)
     # No setup needed - testing validation
@@ -178,7 +178,7 @@ Feature: User Registration API Implementation
 
     # Verification: Error response
     And the response body should contain field "error"
-    And the response body field "error" should equal "資料驗證失敗，請檢查輸入內容"
+    And the response body field "error" should equal string "資料驗證失敗，請檢查輸入內容"
 
   Scenario: Failed registration with username too long (51 characters)
     # No setup needed - testing validation
@@ -200,7 +200,7 @@ Feature: User Registration API Implementation
 
     # Verification: Error response
     And the response body should contain field "error"
-    And the response body field "error" should equal "資料驗證失敗，請檢查輸入內容"
+    And the response body field "error" should equal string "資料驗證失敗，請檢查輸入內容"
 
   Scenario: Failed registration with invalid username characters
     # No setup needed - testing validation
@@ -222,7 +222,7 @@ Feature: User Registration API Implementation
 
     # Verification: Error response
     And the response body should contain field "error"
-    And the response body field "error" should equal "資料驗證失敗，請檢查輸入內容"
+    And the response body field "error" should equal string "資料驗證失敗，請檢查輸入內容"
 
   Scenario: Failed registration with password too short (7 characters)
     # No setup needed - testing validation
@@ -244,7 +244,7 @@ Feature: User Registration API Implementation
 
     # Verification: Error response
     And the response body should contain field "error"
-    And the response body field "error" should equal "資料驗證失敗，請檢查輸入內容"
+    And the response body field "error" should equal string "資料驗證失敗，請檢查輸入內容"
 
   Scenario: Failed registration with password too long (73 characters)
     # No setup needed - testing validation
@@ -266,4 +266,4 @@ Feature: User Registration API Implementation
 
     # Verification: Error response
     And the response body should contain field "error"
-    And the response body field "error" should equal "資料驗證失敗，請檢查輸入內容"
+    And the response body field "error" should equal string "資料驗證失敗，請檢查輸入內容"

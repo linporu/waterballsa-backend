@@ -37,8 +37,8 @@ Feature: User Login API Implementation
     And the response body should contain field "user.experience"
 
     # Verification: Response values
-    And the response body field "user.username" should equal "Alice"
-    And the response body field "user.experience" should equal "0"
+    And the response body field "user.username" should equal string "Alice"
+    And the response body field "user.experience" should equal number 0
 
   Scenario: Failed login with wrong password
     # Setup: Create test user
@@ -63,7 +63,7 @@ Feature: User Login API Implementation
 
     # Verification: Error response
     And the response body should contain field "error"
-    And the response body field "error" should equal "帳號或密碼錯誤"
+    And the response body field "error" should equal string "帳號或密碼錯誤"
 
   Scenario: Failed login with non-existent username
     # No setup needed - user doesn't exist
@@ -85,4 +85,4 @@ Feature: User Login API Implementation
 
     # Verification: Error response
     And the response body should contain field "error"
-    And the response body field "error" should equal "帳號或密碼錯誤"
+    And the response body field "error" should equal string "帳號或密碼錯誤"

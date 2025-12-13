@@ -48,20 +48,20 @@ Feature: Mission Detail API Implementation
     # Verification: Mission basic info
     And the response body should contain field "id"
     And the response body should contain field "title"
-    And the response body field "title" should equal "這門課手把手帶你成為架構設計的高手"
-    And the response body field "description" should equal "思維升級：Christopher Alexander 模式六大要素及模式語言"
-    And the response body field "type" should equal "VIDEO"
-    And the response body field "accessLevel" should equal "PUBLIC"
+    And the response body field "title" should equal string "這門課手把手帶你成為架構設計的高手"
+    And the response body field "description" should equal string "思維升級：Christopher Alexander 模式六大要素及模式語言"
+    And the response body field "type" should equal string "VIDEO"
+    And the response body field "accessLevel" should equal string "PUBLIC"
 
     # Verification: Reward
     And the response body should contain field "reward"
     And the response body should contain field "reward.exp"
-    And the response body field "reward.exp" should equal "100"
+    And the response body field "reward.exp" should equal number 100
 
     # Verification: Resources
     And the response body should contain field "resource"
     And the response body field "resource" should have size 1
-    And the response body field "resource[0].type" should equal "video"
+    And the response body field "resource[0].type" should equal string "video"
 
   Scenario: Guest attempts to view authenticated mission returns 401
     # Setup: Create authenticated mission
@@ -91,7 +91,7 @@ Feature: Mission Detail API Implementation
 
     # Verification: Error response
     And the response body should contain field "error"
-    And the response body field "error" should equal "登入資料已過期"
+    And the response body field "error" should equal string "登入資料已過期"
 
   Scenario: Guest attempts to view purchased mission returns 401
     # Setup: Create purchased mission
@@ -121,7 +121,7 @@ Feature: Mission Detail API Implementation
 
     # Verification: Error response
     And the response body should contain field "error"
-    And the response body field "error" should equal "登入資料已過期"
+    And the response body field "error" should equal string "登入資料已過期"
 
   Scenario: Get non-existent mission returns 404
     # Setup: Create journey but no mission with ID 999
@@ -139,4 +139,4 @@ Feature: Mission Detail API Implementation
 
     # Verification: Error response
     And the response body should contain field "error"
-    And the response body field "error" should equal "查無此任務"
+    And the response body field "error" should equal string "查無此任務"

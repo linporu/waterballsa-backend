@@ -47,7 +47,7 @@ Feature: User Logout API Implementation
     And the response body should contain field "message"
 
     # Verification: Response values
-    And the response body field "message" should equal "Logout successful"
+    And the response body field "message" should equal string "Logout successful"
 
   Scenario: Non-logged-in user attempts to logout and fails
     # No setup needed - no user logged in
@@ -60,7 +60,7 @@ Feature: User Logout API Implementation
 
     # Verification: Error response
     And the response body should contain field "error"
-    And the response body field "error" should equal "登入資料已過期"
+    And the response body field "error" should equal string "登入資料已過期"
 
   Scenario: Already logged-out user attempts to logout again and fails
     # Setup: Create test user directly in database
@@ -96,7 +96,7 @@ Feature: User Logout API Implementation
 
     # Verification: First logout successful
     Then the response status code should be 200
-    And the response body field "message" should equal "Logout successful"
+    And the response body field "message" should equal string "Logout successful"
 
     # Setup: Set Authorization header for second logout attempt
     Given I set Authorization header to "{{token}}"
@@ -109,4 +109,4 @@ Feature: User Logout API Implementation
 
     # Verification: Error response
     And the response body should contain field "error"
-    And the response body field "error" should equal "登入資料已過期"
+    And the response body field "error" should equal string "登入資料已過期"

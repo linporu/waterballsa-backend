@@ -3,6 +3,7 @@ package waterballsa.bdd.steps;
 import static io.restassured.RestAssured.given;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.notNullValue;
+import static org.hamcrest.Matchers.nullValue;
 
 import io.cucumber.java.en.And;
 import io.cucumber.java.en.Given;
@@ -11,6 +12,7 @@ import io.cucumber.java.en.When;
 import io.restassured.http.ContentType;
 import io.restassured.response.Response;
 import io.restassured.specification.RequestSpecification;
+import java.math.BigDecimal;
 import java.util.Map;
 import org.springframework.beans.factory.annotation.Autowired;
 import waterballsa.bdd.support.World;
@@ -120,28 +122,60 @@ public class IsaStepDefinitions {
   }
 
   /**
-   * Verify that a field in the response body equals an expected value.
+   * Verify that a field in the response body equals an expected string value.
    *
    * @param fieldPath JSON path to the field
-   * @param expectedValue expected value as string
+   * @param expectedValue expected string value
    */
-  @And("the response body field {string} should equal {string}")
-  public void verifyFieldEquals(String fieldPath, String expectedValue) {
-    // Try to parse as number first, otherwise treat as string
-    try {
-      // Try parsing as integer first
-      int intValue = Integer.parseInt(expectedValue);
-      world.getLastResponse().then().body(fieldPath, equalTo(intValue));
-    } catch (NumberFormatException e) {
-      try {
-        // Try parsing as float/double
-        float floatValue = Float.parseFloat(expectedValue);
-        world.getLastResponse().then().body(fieldPath, equalTo(floatValue));
-      } catch (NumberFormatException e2) {
-        // Treat as string
-        world.getLastResponse().then().body(fieldPath, equalTo(expectedValue));
-      }
-    }
+  @And("the response body field {string} should equal string {string}")
+  public void verifyFieldEqualsString(String fieldPath, String expectedValue) {
+    world.getLastResponse().then().body(fieldPath, equalTo(expectedValue));
+  }
+
+  /**
+   * Verify that a field in the response body equals an expected integer value.
+   *
+   * @param fieldPath JSON path to the field
+   * @param expectedValue expected integer value
+   */
+  @And("the response body field {string} should equal number {int}")
+  public void verifyFieldEqualsInt(String fieldPath, int expectedValue) {
+    world.getLastResponse().then().body(fieldPath, equalTo(expectedValue));
+  }
+
+  /**
+   * Verify that a field in the response body equals an expected decimal value.
+   *
+   * @param fieldPath JSON path to the field
+   * @param expectedValue expected decimal value as string (will be converted to BigDecimal)
+   */
+  @And("the response body field {string} should equal decimal {string}")
+  public void verifyFieldEqualsDecimal(String fieldPath, String expectedValue) {
+    BigDecimal expected = new BigDecimal(expectedValue);
+    // For JSON comparison, we need to compare as float since JSON doesn't have BigDecimal
+    world.getLastResponse().then().body(fieldPath, equalTo(expected.floatValue()));
+  }
+
+  /**
+   * Verify that a field in the response body equals an expected boolean value.
+   *
+   * @param fieldPath JSON path to the field
+   * @param expectedValue expected boolean value as string ("true" or "false")
+   */
+  @And("the response body field {string} should equal boolean {word}")
+  public void verifyFieldEqualsBoolean(String fieldPath, String expectedValue) {
+    boolean expected = Boolean.parseBoolean(expectedValue);
+    world.getLastResponse().then().body(fieldPath, equalTo(expected));
+  }
+
+  /**
+   * Verify that a field in the response body is null.
+   *
+   * @param fieldPath JSON path to the field
+   */
+  @And("the response body field {string} should be null")
+  public void verifyFieldIsNull(String fieldPath) {
+    world.getLastResponse().then().body(fieldPath, nullValue());
   }
 
   /**

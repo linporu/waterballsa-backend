@@ -34,16 +34,16 @@ Feature: Journey List API Implementation
     And the response body field "journeys" should have size 2
 
     # Verification: First journey values
-    And the response body field "journeys[0].title" should equal "軟體設計模式精通之旅"
-    And the response body field "journeys[0].teacherName" should equal "水球潘"
-    And the response body field "journeys[0].price" should equal "1999.0"
-    And the response body field "journeys[0].description" should equal "用 C.A. 模式大大提昇系統思維能力"
-    And the response body field "journeys[0].coverImageUrl" should equal "https://example.com/cover1.jpg"
+    And the response body field "journeys[0].title" should equal string "軟體設計模式精通之旅"
+    And the response body field "journeys[0].teacherName" should equal string "水球潘"
+    And the response body field "journeys[0].price" should equal decimal "1999.0"
+    And the response body field "journeys[0].description" should equal string "用 C.A. 模式大大提昇系統思維能力"
+    And the response body field "journeys[0].coverImageUrl" should equal string "https://example.com/cover1.jpg"
 
     # Verification: Second journey values
-    And the response body field "journeys[1].title" should equal "Web 開發入門"
-    And the response body field "journeys[1].teacherName" should equal "林老師"
-    And the response body field "journeys[1].price" should equal "999.0"
+    And the response body field "journeys[1].title" should equal string "Web 開發入門"
+    And the response body field "journeys[1].teacherName" should equal string "林老師"
+    And the response body field "journeys[1].price" should equal decimal "999.0"
 
   Scenario: Get empty list when no journeys exist
     # No setup needed - database is clean
@@ -79,8 +79,8 @@ Feature: Journey List API Implementation
     And the response body field "journeys" should have size 1
 
     # Verification: Journey values
-    And the response body field "journeys[0].title" should equal "Java 基礎課程"
-    And the response body field "journeys[0].teacherName" should equal "陳老師"
-    And the response body field "journeys[0].price" should equal "1500.0"
-    And the response body field "journeys[0].description" should equal "深入淺出學習 Java 程式設計"
-    And the response body field "journeys[0].coverImageUrl" should equal "https://example.com/java-cover.jpg"
+    And the response body field "journeys[0].title" should equal string "Java 基礎課程"
+    And the response body field "journeys[0].teacherName" should equal string "陳老師"
+    And the response body field "journeys[0].price" should equal decimal "1500.0"
+    And the response body field "journeys[0].description" should equal string "深入淺出學習 Java 程式設計"
+    And the response body field "journeys[0].coverImageUrl" should equal string "https://example.com/java-cover.jpg"

@@ -3,10 +3,15 @@ package waterballsa.bdd.steps;
 import io.cucumber.datatable.DataTable;
 import io.cucumber.java.en.Given;
 import java.math.BigDecimal;
+import java.sql.PreparedStatement;
+import java.sql.Statement;
 import java.util.Map;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.jdbc.support.GeneratedKeyHolder;
+import org.springframework.jdbc.support.KeyHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import waterballsa.bdd.support.World;
 
 /**
  * Step definitions for database operations in BDD tests.
@@ -36,6 +41,8 @@ public class DatabaseStepDefinitions {
   @Autowired private JdbcTemplate jdbcTemplate;
 
   @Autowired private PasswordEncoder passwordEncoder;
+
+  @Autowired private World world;
 
   /**
    * Create a test user directly in the database.
@@ -86,6 +93,9 @@ public class DatabaseStepDefinitions {
    *   | price       | 1999.00                |
    * </pre>
    *
+   * <p>The generated journey ID is automatically stored in the variable "lastJourneyId" for use in
+   * subsequent steps.
+   *
    * @param dataTable DataTable containing journey data with keys: title (required), slug
    *     (required), description (optional), teacher (required), price (required)
    */
@@ -98,15 +108,33 @@ public class DatabaseStepDefinitions {
     String description = journeyData.get("description");
     String teacher = journeyData.get("teacher");
     BigDecimal price = new BigDecimal(journeyData.get("price"));
+    String coverImageUrl = journeyData.get("cover_image_url");
+
+    KeyHolder keyHolder = new GeneratedKeyHolder();
 
     jdbcTemplate.update(
-        "INSERT INTO journeys (title, slug, description, teacher_name, price) "
-            + "VALUES (?, ?, ?, ?, ?)",
-        title,
-        slug,
-        description,
-        teacher,
-        price);
+        connection -> {
+          PreparedStatement ps =
+              connection.prepareStatement(
+                  "INSERT INTO journeys (title, slug, description, teacher_name, price, cover_image_url, created_at, updated_at) "
+                      + "VALUES (?, ?, ?, ?, ?, ?, NOW(), NOW())",
+                  Statement.RETURN_GENERATED_KEYS);
+          ps.setString(1, title);
+          ps.setString(2, slug);
+          ps.setString(3, description);
+          ps.setString(4, teacher);
+          ps.setBigDecimal(5, price);
+          ps.setString(6, coverImageUrl);
+          return ps;
+        },
+        keyHolder);
+
+    // Store the generated journey ID for use in subsequent steps
+    Map<String, Object> keys = keyHolder.getKeys();
+    if (keys != null && !keys.isEmpty()) {
+      Long journeyId = ((Number) keys.get("id")).longValue();
+      world.setVariable("lastJourneyId", journeyId.toString());
+    }
   }
 
   /**
@@ -116,10 +144,13 @@ public class DatabaseStepDefinitions {
    *
    * <pre>
    * Given the database has a chapter:
-   *   | journey_id  | 1             |
-   *   | title       | 第一章         |
-   *   | order_index | 1             |
+   *   | journey_id  | {{lastJourneyId}} |
+   *   | title       | 第一章             |
+   *   | order_index | 1                 |
    * </pre>
+   *
+   * <p>The journey_id can be a literal value or a variable like {{lastJourneyId}}. The generated
+   * chapter ID is automatically stored in the variable "lastChapterId" for use in subsequent steps.
    *
    * @param dataTable DataTable containing chapter data with keys: journey_id (required), title
    *     (required), order_index (required)
@@ -128,15 +159,34 @@ public class DatabaseStepDefinitions {
   public void databaseHasChapter(DataTable dataTable) {
     Map<String, String> chapterData = dataTable.asMap(String.class, String.class);
 
-    long journeyId = Long.parseLong(chapterData.get("journey_id"));
+    // Support variable replacement for journey_id
+    String journeyIdStr = world.replaceVariables(chapterData.get("journey_id"));
+    long journeyId = Long.parseLong(journeyIdStr);
+
     String title = chapterData.get("title");
     int orderIndex = Integer.parseInt(chapterData.get("order_index"));
 
+    KeyHolder keyHolder = new GeneratedKeyHolder();
+
     jdbcTemplate.update(
-        "INSERT INTO chapters (journey_id, title, order_index) " + "VALUES (?, ?, ?)",
-        journeyId,
-        title,
-        orderIndex);
+        connection -> {
+          PreparedStatement ps =
+              connection.prepareStatement(
+                  "INSERT INTO chapters (journey_id, title, order_index) VALUES (?, ?, ?)",
+                  Statement.RETURN_GENERATED_KEYS);
+          ps.setLong(1, journeyId);
+          ps.setString(2, title);
+          ps.setInt(3, orderIndex);
+          return ps;
+        },
+        keyHolder);
+
+    // Store the generated chapter ID for use in subsequent steps
+    Map<String, Object> keys = keyHolder.getKeys();
+    if (keys != null && !keys.isEmpty()) {
+      Long chapterId = ((Number) keys.get("id")).longValue();
+      world.setVariable("lastChapterId", chapterId.toString());
+    }
   }
 
   /**
@@ -146,12 +196,15 @@ public class DatabaseStepDefinitions {
    *
    * <pre>
    * Given the database has a mission:
-   *   | chapter_id   | 1            |
-   *   | title        | 認識變數      |
-   *   | type         | VIDEO        |
-   *   | access_level | PURCHASED    |
-   *   | order_index  | 1            |
+   *   | chapter_id   | {{lastChapterId}} |
+   *   | title        | 認識變數           |
+   *   | type         | VIDEO             |
+   *   | access_level | PURCHASED         |
+   *   | order_index  | 1                 |
    * </pre>
+   *
+   * <p>The chapter_id can be a literal value or a variable like {{lastChapterId}}. The generated
+   * mission ID is automatically stored in the variable "lastMissionId" for use in subsequent steps.
    *
    * @param dataTable DataTable containing mission data with keys: chapter_id (required), title
    *     (required), type (optional, default: VIDEO), access_level (optional, default: PURCHASED),
@@ -161,22 +214,41 @@ public class DatabaseStepDefinitions {
   public void databaseHasMission(DataTable dataTable) {
     Map<String, String> missionData = dataTable.asMap(String.class, String.class);
 
-    long chapterId = Long.parseLong(missionData.get("chapter_id"));
+    // Support variable replacement for chapter_id
+    String chapterIdStr = world.replaceVariables(missionData.get("chapter_id"));
+    long chapterId = Long.parseLong(chapterIdStr);
+
     String title = missionData.get("title");
     String type = missionData.getOrDefault("type", "VIDEO");
     String accessLevel = missionData.getOrDefault("access_level", "PURCHASED");
     int orderIndex = Integer.parseInt(missionData.get("order_index"));
     String description = missionData.get("description");
 
+    KeyHolder keyHolder = new GeneratedKeyHolder();
+
     jdbcTemplate.update(
-        "INSERT INTO missions (chapter_id, title, type, access_level, order_index, description) "
-            + "VALUES (?, ?, ?::mission_type, ?::mission_access_level, ?, ?)",
-        chapterId,
-        title,
-        type,
-        accessLevel,
-        orderIndex,
-        description);
+        connection -> {
+          PreparedStatement ps =
+              connection.prepareStatement(
+                  "INSERT INTO missions (chapter_id, title, type, access_level, order_index, description) "
+                      + "VALUES (?, ?, ?::mission_type, ?::mission_access_level, ?, ?)",
+                  Statement.RETURN_GENERATED_KEYS);
+          ps.setLong(1, chapterId);
+          ps.setString(2, title);
+          ps.setString(3, type);
+          ps.setString(4, accessLevel);
+          ps.setInt(5, orderIndex);
+          ps.setString(6, description);
+          return ps;
+        },
+        keyHolder);
+
+    // Store the generated mission ID for use in subsequent steps
+    Map<String, Object> keys = keyHolder.getKeys();
+    if (keys != null && !keys.isEmpty()) {
+      Long missionId = ((Number) keys.get("id")).longValue();
+      world.setVariable("lastMissionId", missionId.toString());
+    }
   }
 
   /**
@@ -251,10 +323,12 @@ public class DatabaseStepDefinitions {
    *
    * <pre>
    * Given the database has a reward:
-   *   | mission_id   | 1          |
-   *   | reward_type  | EXPERIENCE |
-   *   | reward_value | 100        |
+   *   | mission_id   | {{lastMissionId}} |
+   *   | reward_type  | EXPERIENCE        |
+   *   | reward_value | 100               |
    * </pre>
+   *
+   * <p>The mission_id can be a literal value or a variable like {{lastMissionId}}.
    *
    * @param dataTable DataTable containing reward data with keys: mission_id (required), reward_type
    *     (optional, default: EXPERIENCE), reward_value (optional, default: 100)
@@ -263,7 +337,10 @@ public class DatabaseStepDefinitions {
   public void databaseHasReward(DataTable dataTable) {
     Map<String, String> rewardData = dataTable.asMap(String.class, String.class);
 
-    long missionId = Long.parseLong(rewardData.get("mission_id"));
+    // Support variable replacement for mission_id
+    String missionIdStr = world.replaceVariables(rewardData.get("mission_id"));
+    long missionId = Long.parseLong(missionIdStr);
+
     String rewardType = rewardData.getOrDefault("reward_type", "EXPERIENCE");
     int rewardValue = Integer.parseInt(rewardData.getOrDefault("reward_value", "100"));
 
@@ -308,5 +385,51 @@ public class DatabaseStepDefinitions {
         missionId,
         status,
         watchPosition);
+  }
+
+  /**
+   * Create a test mission resource directly in the database.
+   *
+   * <p>Usage example:
+   *
+   * <pre>
+   * Given the database has a mission resource:
+   *   | mission_id       | {{lastMissionId}}           |
+   *   | type             | VIDEO                       |
+   *   | resource_url     | https://example.com/vid.mp4 |
+   *   | content_order    | 0                           |
+   *   | duration_seconds | 256                         |
+   * </pre>
+   *
+   * <p>The mission_id can be a literal value or a variable like {{lastMissionId}}.
+   *
+   * @param dataTable DataTable containing resource data with keys: mission_id (required), type
+   *     (optional, default: VIDEO), resource_url (optional), content_order (optional, default: 0),
+   *     duration_seconds (optional)
+   */
+  @Given("the database has a mission resource:")
+  public void databaseHasMissionResource(DataTable dataTable) {
+    Map<String, String> resourceData = dataTable.asMap(String.class, String.class);
+
+    // Support variable replacement for mission_id
+    String missionIdStr = world.replaceVariables(resourceData.get("mission_id"));
+    long missionId = Long.parseLong(missionIdStr);
+
+    String resourceType = resourceData.getOrDefault("type", "VIDEO");
+    String resourceUrl = resourceData.get("resource_url");
+    int contentOrder = Integer.parseInt(resourceData.getOrDefault("content_order", "0"));
+    Integer durationSeconds =
+        resourceData.containsKey("duration_seconds")
+            ? Integer.parseInt(resourceData.get("duration_seconds"))
+            : null;
+
+    jdbcTemplate.update(
+        "INSERT INTO mission_resources (mission_id, resource_type, resource_url, content_order, duration_seconds) "
+            + "VALUES (?, ?::resource_type, ?, ?, ?)",
+        missionId,
+        resourceType,
+        resourceUrl,
+        contentOrder,
+        durationSeconds);
   }
 }

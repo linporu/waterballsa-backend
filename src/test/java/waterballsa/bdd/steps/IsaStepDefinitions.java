@@ -71,11 +71,14 @@ public class IsaStepDefinitions {
    * contamination between scenarios.
    *
    * @param method HTTP method (GET, POST, PUT, DELETE)
-   * @param endpoint API endpoint path
+   * @param endpoint API endpoint path (supports variable substitution with {{variableName}})
    */
   @When("I send {string} request to {string}")
   public void sendRequest(String method, String endpoint) {
     RequestSpecification request = given();
+
+    // Replace variables in endpoint
+    String processedEndpoint = world.replaceVariables(endpoint);
 
     // Apply all headers from World
     for (Map.Entry<String, String> header : world.getHeaders().entrySet()) {
@@ -88,7 +91,7 @@ public class IsaStepDefinitions {
     }
 
     // Send the request and store the response
-    Response response = request.request(method, endpoint);
+    Response response = request.request(method, processedEndpoint);
     world.setLastResponse(response);
 
     // Clear headers and body after sending to prevent contamination
@@ -126,10 +129,18 @@ public class IsaStepDefinitions {
   public void verifyFieldEquals(String fieldPath, String expectedValue) {
     // Try to parse as number first, otherwise treat as string
     try {
-      int numericValue = Integer.parseInt(expectedValue);
-      world.getLastResponse().then().body(fieldPath, equalTo(numericValue));
+      // Try parsing as integer first
+      int intValue = Integer.parseInt(expectedValue);
+      world.getLastResponse().then().body(fieldPath, equalTo(intValue));
     } catch (NumberFormatException e) {
-      world.getLastResponse().then().body(fieldPath, equalTo(expectedValue));
+      try {
+        // Try parsing as float/double
+        float floatValue = Float.parseFloat(expectedValue);
+        world.getLastResponse().then().body(fieldPath, equalTo(floatValue));
+      } catch (NumberFormatException e2) {
+        // Treat as string
+        world.getLastResponse().then().body(fieldPath, equalTo(expectedValue));
+      }
     }
   }
 
@@ -143,5 +154,25 @@ public class IsaStepDefinitions {
   public void storeResponseField(String fieldPath, String variableName) {
     String value = world.getLastResponse().then().extract().path(fieldPath).toString();
     world.setVariable(variableName, value);
+  }
+
+  /**
+   * Verify that a field in the response body has a specific size. Works for arrays, strings, or any
+   * collection.
+   *
+   * <p>Usage examples:
+   *
+   * <pre>
+   * Then the response body field "journeys" should have size 2
+   * And the response body field "chapters" should have size 3
+   * And the response body field "resource" should have size 1
+   * </pre>
+   *
+   * @param fieldPath JSON path to the field
+   * @param expectedSize expected size
+   */
+  @Then("the response body field {string} should have size {int}")
+  public void verifyFieldSize(String fieldPath, int expectedSize) {
+    world.getLastResponse().then().body(fieldPath + ".size()", equalTo(expectedSize));
   }
 }

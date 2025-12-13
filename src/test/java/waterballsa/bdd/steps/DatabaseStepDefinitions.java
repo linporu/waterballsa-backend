@@ -304,19 +304,37 @@ public class DatabaseStepDefinitions {
     // Generate order number (simplified version for testing)
     String orderNumber = String.format("%d-%d-%d", System.currentTimeMillis(), userId, journeyId);
 
-    // Insert order with current timestamp and 3-day expiration
-    Long orderId =
-        jdbcTemplate.queryForObject(
-            "INSERT INTO orders (order_number, user_id, status, original_price, discount, price, "
-                + "created_at, expired_at, updated_at) "
-                + "VALUES (?, ?, ?::order_status, ?, 0, ?, NOW(), NOW() + INTERVAL '3 days', NOW()) "
-                + "RETURNING id",
-            Long.class,
-            orderNumber,
-            userId,
-            status,
-            journeyPrice,
-            journeyPrice);
+    // Insert order with appropriate timestamps based on status
+    Long orderId;
+    if ("PAID".equals(status)) {
+      // For PAID orders: set paid_at to NOW(), no expired_at
+      orderId =
+          jdbcTemplate.queryForObject(
+              "INSERT INTO orders (order_number, user_id, status, original_price, discount, price, "
+                  + "created_at, paid_at, updated_at) "
+                  + "VALUES (?, ?, ?::order_status, ?, 0, ?, NOW(), NOW(), NOW()) "
+                  + "RETURNING id",
+              Long.class,
+              orderNumber,
+              userId,
+              status,
+              journeyPrice,
+              journeyPrice);
+    } else {
+      // For UNPAID/EXPIRED orders: set expired_at, no paid_at
+      orderId =
+          jdbcTemplate.queryForObject(
+              "INSERT INTO orders (order_number, user_id, status, original_price, discount, price, "
+                  + "created_at, expired_at, updated_at) "
+                  + "VALUES (?, ?, ?::order_status, ?, 0, ?, NOW(), NOW() + INTERVAL '3 days', NOW()) "
+                  + "RETURNING id",
+              Long.class,
+              orderNumber,
+              userId,
+              status,
+              journeyPrice,
+              journeyPrice);
+    }
 
     // Insert order item
     jdbcTemplate.update(

@@ -43,6 +43,13 @@ public class RestAssuredConfig {
     jdbcTemplate.execute("DELETE FROM journeys WHERE TRUE");
     jdbcTemplate.execute("DELETE FROM access_tokens WHERE TRUE");
     jdbcTemplate.execute("DELETE FROM users WHERE TRUE");
+
+    // Reset sequences to ensure consistent IDs across test runs
+    jdbcTemplate.execute("ALTER SEQUENCE users_id_seq RESTART WITH 1");
+    jdbcTemplate.execute("ALTER SEQUENCE journeys_id_seq RESTART WITH 1");
+    jdbcTemplate.execute("ALTER SEQUENCE chapters_id_seq RESTART WITH 1");
+    jdbcTemplate.execute("ALTER SEQUENCE missions_id_seq RESTART WITH 1");
+    jdbcTemplate.execute("ALTER SEQUENCE orders_id_seq RESTART WITH 1");
   }
 
   /** Clean up after each scenario. */

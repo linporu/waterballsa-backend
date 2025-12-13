@@ -374,7 +374,11 @@ public class DatabaseStepDefinitions {
     Map<String, String> progressData = dataTable.asMap(String.class, String.class);
 
     long userId = Long.parseLong(progressData.get("user_id"));
-    long missionId = Long.parseLong(progressData.get("mission_id"));
+
+    // Support variable replacement for mission_id
+    String missionIdStr = world.replaceVariables(progressData.get("mission_id"));
+    long missionId = Long.parseLong(missionIdStr);
+
     String status = progressData.getOrDefault("status", "UNCOMPLETED");
     int watchPosition = Integer.parseInt(progressData.getOrDefault("watch_position_seconds", "0"));
 

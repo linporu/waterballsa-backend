@@ -206,14 +206,36 @@ public class IsaStepDefinitions {
   /**
    * Verify that a field in the response body equals an expected decimal value.
    *
+   * <p>This method performs precise BigDecimal comparison to avoid floating-point precision issues.
+   * It extracts the actual value from the JSON response and compares it using BigDecimal.compareTo()
+   * to ensure exact equality.
+   *
    * @param fieldPath JSON path to the field
    * @param expectedValue expected decimal value as string (will be converted to BigDecimal)
    */
   @And("the response body field {string} should equal decimal {string}")
   public void verifyFieldEqualsDecimal(String fieldPath, String expectedValue) {
     BigDecimal expected = new BigDecimal(expectedValue);
-    // For JSON comparison, we need to compare as float since JSON doesn't have BigDecimal
-    world.getLastResponse().then().body(fieldPath, equalTo(expected.floatValue()));
+
+    // Extract actual value from response
+    Object actualObj = world.getLastResponse().then().extract().path(fieldPath);
+    BigDecimal actual;
+
+    if (actualObj instanceof Number) {
+      actual = new BigDecimal(actualObj.toString());
+    } else if (actualObj instanceof String) {
+      actual = new BigDecimal((String) actualObj);
+    } else {
+      throw new AssertionError(
+          String.format("Field '%s' is not a valid number: %s", fieldPath, actualObj));
+    }
+
+    if (actual.compareTo(expected) != 0) {
+      throw new AssertionError(
+          String.format(
+              "Field '%s' expected: <%s> but was: <%s>",
+              fieldPath, expected.toPlainString(), actual.toPlainString()));
+    }
   }
 
   /**
@@ -335,6 +357,10 @@ public class IsaStepDefinitions {
    * <p>This is a convenience step that combines: 1. Setting request body with login credentials 2.
    * Sending POST request to /auth/login 3. Storing the access token in World for later use
    *
+   * <p>This method uses the unified sendRequest() logic internally, ensuring consistent behavior
+   * with other HTTP requests (automatic header/body cleanup, potential future enhancements like
+   * logging/monitoring).
+   *
    * <p>The access token can be used in subsequent steps with: Given I set Authorization header to
    * "{{accessToken}}"
    *
@@ -353,22 +379,19 @@ public class IsaStepDefinitions {
     // Set request body
     String loginBody =
         String.format("{\"username\": \"%s\", \"password\": \"%s\"}", username, password);
-    world.setRequestBody(loginBody);
+    setRequestBody(loginBody);
 
-    // Send login request
-    RequestSpecification request = given().contentType(ContentType.JSON).body(loginBody);
-    Response response = request.post("/auth/login");
-    world.setLastResponse(response);
+    // Use unified request sending logic
+    sendRequest("POST", "/auth/login");
 
-    // Store the access token
+    // Extract and store the access token and user ID
+    Response response = world.getLastResponse();
     String accessToken = response.then().extract().path("accessToken");
     world.setVariable("accessToken", accessToken);
 
-    // Also store user ID if needed
     Integer userId = response.then().extract().path("user.id");
     world.setVariable("userId", userId.toString());
 
-    // Clear request body after login
-    world.setRequestBody(null);
+    // Note: headers and body are already cleared by sendRequest()
   }
 }

@@ -1,4 +1,4 @@
-.PHONY: fmt lint build test test-unit test-integration test-e2e migrate-up migrate-down migrate-drop migrate-refresh migrate-status migrate-create db-backup db-restore
+.PHONY: fmt lint build test test-unit test-integration test-e2e test-bdd test-bdd-isa test-bdd-tag migrate-up migrate-down migrate-drop migrate-refresh migrate-status migrate-create db-backup db-restore
 
 fmt:
 	./mvnw spotless:apply
@@ -20,6 +20,21 @@ test-integration:
 
 test-e2e:
 	./mvnw test -Dtest="waterballsa.e2e.**"
+
+# BDD Testing with Cucumber
+test-bdd:
+	./mvnw test -Dtest=RunCucumberTest
+
+test-bdd-isa:
+	./mvnw test -Dtest=RunCucumberTest -Dcucumber.filter.tags="@isa"
+
+test-bdd-tag:
+	@if [ -z "$(TAG)" ]; then \
+		echo "Error: Please specify TAG=@your-tag"; \
+		echo "Example: make test-bdd-tag TAG=@smoke"; \
+		exit 1; \
+	fi
+	./mvnw test -Dtest=RunCucumberTest -Dcucumber.filter.tags="$(TAG)"
 
 # Database Migration Commands (runs inside Docker container with .env config)
 migrate-up:

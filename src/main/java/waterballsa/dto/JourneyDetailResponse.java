@@ -1,5 +1,6 @@
 package waterballsa.dto;
 
+import java.math.BigDecimal;
 import java.util.List;
 
 public record JourneyDetailResponse(
@@ -9,4 +10,5 @@ public record JourneyDetailResponse(
     String description,
     String coverImageUrl,
     String teacherName,
+    BigDecimal price,
     List<ChapterDTO> chapters) {}

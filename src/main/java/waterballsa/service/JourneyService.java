@@ -87,6 +87,7 @@ public class JourneyService {
         journey.getDescription(),
         journey.getCoverImageUrl(),
         journey.getTeacherName(),
+        journey.getPrice(),
         chapters);
   }
 
@@ -118,6 +119,7 @@ public class JourneyService {
         journey.getTitle(),
         journey.getDescription(),
         journey.getCoverImageUrl(),
-        journey.getTeacherName());
+        journey.getTeacherName(),
+        journey.getPrice());
   }
 }

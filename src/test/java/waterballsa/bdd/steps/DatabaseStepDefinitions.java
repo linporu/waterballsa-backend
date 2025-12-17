@@ -305,7 +305,7 @@ public class DatabaseStepDefinitions {
     String orderNumber = String.format("%d-%d-%d", System.currentTimeMillis(), userId, journeyId);
 
     // Insert order with appropriate timestamps based on status
-    Long orderId;
+    Long orderId = null;
     if ("PAID".equals(status)) {
       // For PAID orders: set paid_at to NOW(), no expired_at
       orderId =
@@ -334,6 +334,10 @@ public class DatabaseStepDefinitions {
               status,
               journeyPrice,
               journeyPrice);
+    }
+
+    if (orderId == null) {
+      throw new IllegalStateException("Failed to create order: orderId is null");
     }
 
     // Insert order item

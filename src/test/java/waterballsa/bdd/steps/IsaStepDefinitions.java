@@ -207,8 +207,8 @@ public class IsaStepDefinitions {
    * Verify that a field in the response body equals an expected decimal value.
    *
    * <p>This method performs precise BigDecimal comparison to avoid floating-point precision issues.
-   * It extracts the actual value from the JSON response and compares it using BigDecimal.compareTo()
-   * to ensure exact equality.
+   * It extracts the actual value from the JSON response and compares it using
+   * BigDecimal.compareTo() to ensure exact equality.
    *
    * @param fieldPath JSON path to the field
    * @param expectedValue expected decimal value as string (will be converted to BigDecimal)

@@ -44,7 +44,7 @@ public class SecurityConfig {
             "http://localhost", // Nginx HTTP (without port)
             "https://localhost", // Nginx HTTPS (without port)
             "https://*.ngrok-free.dev", // Ngrok free domains
-            "https://waterballsa-backend.zeabur.app" // Production deployment
+            "https://waterballsa-frontend.zeabur.app" // Frontend in production
             ));
     configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS"));
     configuration.setAllowedHeaders(Arrays.asList("*"));

@@ -43,7 +43,9 @@ public class SecurityConfig {
             "https://localhost:443", // Nginx HTTPS
             "http://localhost", // Nginx HTTP (without port)
             "https://localhost", // Nginx HTTPS (without port)
-            "https://*.ngrok-free.dev" // Ngrok free domains
+            "https://*.ngrok-free.dev", // Ngrok free domains
+            "https://waterballsa-frontend.zeabur.app", // Frontend in production
+            "https://wsa.richardlin.io" // Frontend in production
             ));
     configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS"));
     configuration.setAllowedHeaders(Arrays.asList("*"));
